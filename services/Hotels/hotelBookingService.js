@@ -4,6 +4,7 @@ const Room = require('../../models/Hotels/roomModel');
 const ApiError = require('../../utils/apiError');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const ApiFeatures = require('../../utils/apiFeatures');
+const Hotel = require('../../models/Hotels/hotelModel');
 
 // @desc Create a hotel booking
 // @route POST /api/v1/hotelBookings
@@ -73,7 +74,7 @@ exports.getAllHotelBookings = asyncHandler(async (req, res, next) => {
 // @route GET /api/v1/hotelBookings/user
 // @access Private/User
 exports.getAllHotelBookingsForCurrentUser = asyncHandler(async (req, res, next) => {
-    const hotelBookings = await HotelBooking.find({ user: req.user._id }).populate('user', 'firstName lastName email avatar').populate('hotel', 'name').populate('room', 'roomNumber roomType');
+    const hotelBookings = await HotelBooking.find({ user: req.user._id }).populate('user', 'firstName lastName email avatar').populate('hotel', 'name city country').populate('room', 'roomNumber roomType');
     res.status(200).json({
         status: 'SUCCESS',
         data: hotelBookings
@@ -85,7 +86,7 @@ exports.getAllHotelBookingsForCurrentUser = asyncHandler(async (req, res, next) 
 // @access Private/User
 exports.getHotelBooking = factory.GetOne(HotelBooking, [
     { path: 'user', select: 'firstName lastName email avatar' },
-    { path: 'hotel', select: 'name' },
+    { path: 'hotel', select: 'name city country' },
     { path: 'room', select: 'roomNumber roomType' }
 ]);
 
@@ -223,3 +224,4 @@ exports.handleNoRoomChange = asyncHandler(async (req, res, next) => {
     }
     next();
 });
+
