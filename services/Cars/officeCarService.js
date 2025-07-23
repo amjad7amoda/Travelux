@@ -14,15 +14,15 @@ exports.uploadCarImages = upload.array('images', 5);
 exports.resizeCarImages = asyncHandler(async (req, res, next) => {
   if (!req.files || req.files.length === 0) return next();
   let images = [];
-  let carName = req.body.brand;
+  let carBrand = req.body.brand;
   let carModel = req.body.model;
   let existingImagesCount = 0;
-  if (!carName || !carModel || req.params.carId) {
+  if (!carBrand  || !carModel || req.params.carId) {
     const car = await Car.findById(req.params.carId);
     if (!car) {
       return res.status(400).json({ status: 'fail', message: 'Car not found' });
     }
-    carName = car.brand;
+    carBrand = car.brand;
     carModel = car.model;
     existingImagesCount = Array.isArray(car.images) ? car.images.length : 0;
   }
@@ -35,7 +35,7 @@ exports.resizeCarImages = asyncHandler(async (req, res, next) => {
     }
     officeName = office.name;
   }
-  const carDir = `uploads/offices/${officeName}/${carName}-${carModel}`;
+  const carDir = `uploads/offices/${officeName.replace(/\s+/g, '_')}/${carBrand.replace(/\s+/g, '_')}-${carModel.replace(/\s+/g, '_')}`;
   if (!fs.existsSync(carDir)) {
     fs.mkdirSync(carDir, { recursive: true });
   }
@@ -74,8 +74,8 @@ exports.getCarById = asyncHandler(async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(officeId) || !mongoose.Types.ObjectId.isValid(carId)) {
     return res.status(400).json({ status: 'fail', message: 'Invalid office or car ID', code: 400 });
   }
-  const car = await Car.findOne({ _id: id, office: officeId });
-  if (!car) return res.status(404).json({ status: 'fail', message: 'Car not found in this office', code: 404 });
+  const car = await Car.findOne({ _id: carId, office: officeId });
+  if (!car) return res.status(400).json({ status: 'fail', message: 'Car not found in this office'});
   res.json({ status: 'success', data: { car } });
 });
 
@@ -126,7 +126,7 @@ exports.getOfficeBookings = asyncHandler(async (req, res) => {
   const { officeId } = req.params;
   const office = await require('../../models/Cars/carRentalOfficeModel').findById(officeId);
   if (!office) {
-    return res.status(404).json({ status: 'fail', message: 'Office not found' });
+    return res.status(400).json({ status: 'fail', message: 'Office not found' });
   }
   //Check if user is authorized to view bookings for this office
   if (String(office.officeManager) !== String(req.user._id) && req.user.role !== 'admin') {
