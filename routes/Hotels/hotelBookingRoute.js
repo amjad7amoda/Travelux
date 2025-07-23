@@ -14,11 +14,10 @@ const { createHotelBooking,
     setUserIdToBody,
     markRoomAsNotAvailable,
     markRoomAsAvailable,
-    setRoomIdToBody,
     handleNoRoomChange,
     setHotelIdToBody,
     checkOwnership,
-    handleRoomChange
+    handleRoomChange,
 } = require('../../services/Hotels/hotelBookingService');
 
 const { createHotelBookingValidator,
