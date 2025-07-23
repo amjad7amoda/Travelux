@@ -7,6 +7,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 const fse = require('fs-extra'); // fs-extra library
+const Car = require('../../models/Cars/carModel');
 
 // @desc Upload a cover image for a car rental office
 // @route POST /api/offices
@@ -26,7 +27,7 @@ exports.resizeOfficeCoverImage = asyncHandler(async (req, res, next) => {
     }
   }
   if (req.file && officeName) {
-    const officeDir = `uploads/offices/${officeName}`;
+    const officeDir = `uploads/offices/${officeName.replace(/\s+/g, '_')}`;
     if (!fs.existsSync(officeDir)) {
       fs.mkdirSync(officeDir, { recursive: true });
     }
@@ -64,7 +65,25 @@ exports.getAllOffices = handlerFactory.GetAll(CarRentalOffice, 'carRentalOffice'
 // @desc Get a single car rental office by ID
 // @route GET /api/offices/:id
 // @access Public
-exports.getOffice = handlerFactory.GetOne(CarRentalOffice);
+exports.getMyOffice = asyncHandler(async (req, res, next) => {
+  const user = req.user;
+  const office = await CarRentalOffice.find({ officeManager: user._id });
+
+  if(!office) {
+    return next(new ApiError(`You don't have any office`, 400));
+  }
+
+  const caraCount = await Car.countDocuments({ office: office._id });
+
+  res.status(200).json({ status: 'SUCCESS', data: { 
+    cars: caraCount, office 
+  } });
+})
+
+exports.getOffice = handlerFactory.GetOne(CarRentalOffice, {
+  path: 'officeManager',
+  select: 'firstName lastName email'
+});
 
 // @desc Update a car rental office
 // @route PUT /api/offices/:id
@@ -78,8 +97,8 @@ exports.updateOffice = asyncHandler(async (req, res, next) => {
 
   // Only handle folder rename if name is changed
   if (req.body && req.body.name && req.body.name !== oldOffice.name) {
-    const oldDir = `uploads/offices/${oldOffice.name}`;
-    const newDir = `uploads/offices/${req.body.name}`;
+    const oldDir = `uploads/offices/${oldOffice.name.replace(/\s+/g, '_')}`;
+    const newDir = `uploads/offices/${req.body.name.replace(/\s+/g, '_')}`;
     if (fs.existsSync(oldDir)) {
       if (fs.existsSync(newDir)) {
         return next(new ApiError('The new office name is already in use or a folder with the same name exists!', 400));

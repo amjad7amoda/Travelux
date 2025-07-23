@@ -3,6 +3,7 @@ const Station = require('../../models/Trains/stationModel');
 const Route = require('../../models/Trains/routeModel')
 const Train = require('../../models/Trains/trainModel');
 const TrainTrip = require('../../models/Trains/trainTripModel');
+const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const ApiFeatures = require('../../utils/apiFeatures');
 const ApiError = require('../../utils/apiError');
@@ -321,6 +322,45 @@ exports.getManagerTrips = asyncHandler(async (req, res, next) => {
         }
     });
 });
+
+exports.getCountAndRevenue = asyncHandler(async (req, res, next) => {
+    const user = req.user;
+
+    const routes = await Route.find({ routeManager: user._id }, '_id');
+    const routeIds = routes.map(route => route._id);
+    //Completed trips
+    const completedTrips = await TrainTrip.countDocuments({ 
+        route: { $in: routeIds },
+        status: 'completed' 
+    });
+    //Active trips (onWay, preparing )
+    const activeTrips = await TrainTrip.countDocuments({ 
+        route: { $in: routeIds },
+        status: { $in: ['onWay', 'preparing'] } 
+    });
+    //Cancelled trips
+    const cancelledTrips = await TrainTrip.countDocuments({ 
+        route: { $in: routeIds },
+        status: 'cancelled'
+     });
+    //Total revenue from paid tickets
+    const revenueAgg = await TrainTripBooking.aggregate([
+        { $match: { paymentStatus: 'paid', status: 'active' } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+    ]);
+    const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
+
+    return res.json({
+        status: 'success',
+        data: {
+            completedTrips,
+            activeTrips,
+            cancelledTrips,
+            totalRevenue
+        }
+    });
+});
+
 
 // @desc Get the station details
 // @access Private

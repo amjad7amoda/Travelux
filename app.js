@@ -60,17 +60,21 @@ app.use('/api/hotelBookings', hotelBookingRouter);
 app.use('/api/airlines', airlineRouter);
 app.use('/api/planes', planeRouter);
 app.use('/api/flights', flightRouter);
+
 app.use('/api/stations', stationRouter);
 app.use('/api/trains', trainRouter);
 app.use('/api/routes', routeRouter);
 app.use('/api/train-trips', trainTripRouter);
 app.use('/api/train-trip-bookings', trainTripBookingRouter);
+
 app.use('/api/cities', citiesRouter);
 app.use('/api/flightTickets', flightTicketRouter);
+
 app.use('/api/cars', publicCarRoute);
 app.use('/api/offices/:officeId/cars', officeCarRoute);
 app.use('/api/offices', carRentalOfficeRoute);
 app.use('/api/cars', carBookingRoute);
+
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
 //======== Setup the server ========//
 const port = process.env.PORT;

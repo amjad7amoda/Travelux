@@ -4,6 +4,10 @@ const officeCarService = require('../../services/Cars/officeCarService');
 const { protect, allowTo } = require('../../services/authServices');
 const carValidator = require('../../utils/validators/Cars/carValidator');
 
+router.get('/:carId',
+    officeCarService.getCarById
+);
+
 router.get('/', officeCarService.getAllCars);
 
 router.get('/bookings',
@@ -19,10 +23,6 @@ router.post('/',
     carValidator.createCarValidator,
     officeCarService.resizeCarImages,
     officeCarService.createCar
-);
-
-router.get('/:carId',
-    officeCarService.getCarById
 );
 
 router.put('/:carId',

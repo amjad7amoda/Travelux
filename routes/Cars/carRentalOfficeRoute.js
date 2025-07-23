@@ -7,6 +7,7 @@ const { protect, allowTo } = require('../../services/authServices');
 const { createOfficeValidator, updateOfficeValidator } = require('../../utils/validators/Cars/officeValidator');
 const validObjectId = require('../../middlewares/validObjectId');
 
+
 router.post('/',
     protect,
     allowTo('officeManager', 'admin'),
@@ -23,6 +24,12 @@ router.get('/',
 router.get('/:id',
   validObjectId,
   carRentalOfficeService.getOffice
+);
+
+router.get('/my-office',
+  protect,
+  allowTo('officeManager'),
+  carRentalOfficeService.getMyOffice
 );
 
 router.put(

@@ -23,7 +23,7 @@ const trainTripSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['preparing', 'prepared', 'delayed', 'cancelled', 'completed'],
+        enum: ['preparing', 'onWay', 'cancelled', 'completed'],
         default: 'preparing'
     },
     estimatedTime: {

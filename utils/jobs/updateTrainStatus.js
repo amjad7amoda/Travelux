@@ -1,11 +1,12 @@
-const cron = require('node-cron');
-const Train = require('../../models/Trains/trainModel');
-const asyncHandler = require('../../middlewares/asyncHandler');
 const TrainTrip = require('../../models/Trains/trainTripModel');
+const Train = require('../../models/Trains/trainModel');
+const cron = require('node-cron');
+const asyncHandler = require('../../middlewares/asyncHandler');
 
 function scheduleTrainStatusCheck() {
-    cron.schedule('* * * * *', asyncHandler( async () => {
+    cron.schedule('* * * * *', asyncHandler(async () => {
         const now = new Date();
+        // Update the status of the trains
         const expiredTrains = await Train.find({ 
             status: 'booked',
             $or: [
@@ -13,26 +14,38 @@ function scheduleTrainStatusCheck() {
                 { booked_until: { $exists: false } }
             ]
         });
-
         for(const train of expiredTrains){
             train.status = 'available';
             train.booked_until = undefined;
             await train.save();
-            console.log(`[CRON] Updated | ${train.name} is available`)
+            console.log(`Train Service Update | ${train.name} is available`)
         }
-    }));
-    // const now = new Date();
-    // const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    // const tripsToUpdate = await TrainTrip.updateMany({
-    //         status: 'preparing',
-    //         departureTime: { $lte: next24h }
-    //     },{
-    //         $set: { status: 'prepared' } 
-    //     }
-    // );
-    // console.log(`[CRON] Updated | ${tripsToUpdate.modifiedCount} trip(s) to 'prepared'`);
-    // }));
+
+        // Update the trips that have reached the departure time
+        const toOnWay = await TrainTrip.find({
+            status: { $ne: 'onWay' },
+            departureTime: { $lte: now },
+            arrivalTime: { $gt: now }
+        });
+        for (const trip of toOnWay) {
+            trip.status = 'onWay';
+            await trip.save();
+            console.log(`Train Service Update | Trip ${trip._id} is now onWay`);
+        }
+        // Update the status of the trips that have arrived
+        const toCompleted = await TrainTrip.find({
+            status: { $ne: 'completed' },
+            arrivalTime: { $lte: now }
+        });
+        for (const trip of toCompleted) {
+            trip.status = 'completed';
+            await trip.save();
+            console.log(`Train Service Update | Trip ${trip._id} is now completed`);
+        }
+
+
+    }));
 }
 
-module.exports = scheduleTrainStatusCheck;
+module.exports =  scheduleTrainStatusCheck ;
