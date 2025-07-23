@@ -1,0 +1,144 @@
+{
+  "airports": [
+    {
+      "name": "London Heathrow Airport",
+      "iata": "LHR",
+      "city": "London",
+      "country": "United Kingdom",
+      "cityCode": "LON"
+    },
+    {
+      "name": "Charles de Gaulle Airport",
+      "iata": "CDG",
+      "city": "Paris",
+      "country": "France",
+      "cityCode": "PAR"
+    },
+    {
+      "name": "Amsterdam Airport Schiphol",
+      "iata": "AMS",
+      "city": "Amsterdam",
+      "country": "Netherlands",
+      "cityCode": "AMS"
+    },
+    {
+      "name": "Frankfurt Airport",
+      "iata": "FRA",
+      "city": "Frankfurt",
+      "country": "Germany",
+      "cityCode": "FRA"
+    },
+    {
+      "name": "Madrid Barajas Airport",
+      "iata": "MAD",
+      "city": "Madrid",
+      "country": "Spain",
+      "cityCode": "MAD"
+    },
+    {
+      "name": "Rome Fiumicino Airport",
+      "iata": "FCO",
+      "city": "Rome",
+      "country": "Italy",
+      "cityCode": "ROM"
+    },
+    {
+      "name": "Istanbul Airport",
+      "iata": "IST",
+      "city": "Istanbul",
+      "country": "Turkey",
+      "cityCode": "IST"
+    },
+    {
+      "name": "Munich Airport",
+      "iata": "MUC",
+      "city": "Munich",
+      "country": "Germany",
+      "cityCode": "MUC"
+    },
+    {
+      "name": "Barcelona El Prat Airport",
+      "iata": "BCN",
+      "city": "Barcelona",
+      "country": "Spain",
+      "cityCode": "BCN"
+    },
+    {
+      "name": "Gatwick Airport",
+      "iata": "LGW",
+      "city": "London",
+      "country": "United Kingdom",
+      "cityCode": "LON"
+    },
+    {
+      "name": "Paris Orly Airport",
+      "iata": "ORY",
+      "city": "Paris",
+      "country": "France",
+      "cityCode": "PAR"
+    },
+    {
+      "name": "Vienna International Airport",
+      "iata": "VIE",
+      "city": "Vienna",
+      "country": "Austria",
+      "cityCode": "VIE"
+    },
+    {
+      "name": "Stockholm Arlanda Airport",
+      "iata": "ARN",
+      "city": "Stockholm",
+      "country": "Sweden",
+      "cityCode": "STO"
+    },
+    {
+      "name": "Oslo Airport",
+      "iata": "OSL",
+      "city": "Oslo",
+      "country": "Norway",
+      "cityCode": "OSL"
+    },
+    {
+      "name": "Copenhagen Airport",
+      "iata": "CPH",
+      "city": "Copenhagen",
+      "country": "Denmark",
+      "cityCode": "CPH"
+    },
+    {
+      "name": "Helsinki Airport",
+      "iata": "HEL",
+      "city": "Helsinki",
+      "country": "Finland",
+      "cityCode": "HEL"
+    },
+    {
+      "name": "Warsaw Chopin Airport",
+      "iata": "WAW",
+      "city": "Warsaw",
+      "country": "Poland",
+      "cityCode": "WAW"
+    },
+    {
+      "name": "Prague Václav Havel Airport",
+      "iata": "PRG",
+      "city": "Prague",
+      "country": "Czech Republic",
+      "cityCode": "PRG"
+    },
+    {
+      "name": "Budapest Ferenc Liszt International Airport",
+      "iata": "BUD",
+      "city": "Budapest",
+      "country": "Hungary",
+      "cityCode": "BUD"
+    },
+    {
+      "name": "Athens International Airport",
+      "iata": "ATH",
+      "city": "Athens",
+      "country": "Greece",
+      "cityCode": "ATH"
+    }
+  ]
+} 

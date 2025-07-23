@@ -1,0 +1,59 @@
+[
+  {
+    "name": "Berlin Hauptbahnhof - München Hauptbahnhof",
+    "routeManager": "68219b7337b88a8d4b59df8b",
+    "isInternational": false,
+    "stations": [
+      { "station": "64a1f0010000000000000001" },
+      { "station": "64a1f0010000000000000003" },
+      { "station": "64a1f0010000000000000017" },
+      { "station": "64a1f0010000000000000018" },
+      { "station": "64a1f0010000000000000002" }
+    ]
+  },
+  {
+    "name": "Hamburg Hauptbahnhof - Frankfurt (Main) Hauptbahnhof",
+    "routeManager": "68219b7337b88a8d4b59df8b",
+    "isInternational": false,
+    "stations": [
+      { "station": "64a1f0010000000000000004" },
+      { "station": "64a1f0010000000000000009" },
+      { "station": "64a1f0010000000000000015" },
+      { "station": "64a1f0010000000000000017" },
+      { "station": "64a1f0010000000000000005" }
+    ]
+  },
+  {
+    "name": "Köln Hauptbahnhof - Berlin Hauptbahnhof",
+    "routeManager": "68219b7337b88a8d4b59df8b",
+    "isInternational": false,
+    "stations": [
+      { "station": "64a1f0010000000000000006" },
+      { "station": "64a1f0010000000000000007" },
+      { "station": "64a1f0010000000000000009" },
+      { "station": "64a1f0010000000000000001" }
+    ]
+  },
+  {
+    "name": "Stuttgart Hauptbahnhof - Hamburg Hauptbahnhof",
+    "routeManager": "68219b7337b88a8d4b59df8b",
+    "isInternational": false,
+    "stations": [
+      { "station": "64a1f0010000000000000008" },
+      { "station": "64a1f0010000000000000010" },
+      { "station": "64a1f0010000000000000009" },
+      { "station": "64a1f0010000000000000004" }
+    ]
+  },
+  {
+    "name": "Frankfurt (Main) Hauptbahnhof - München Hauptbahnhof",
+    "routeManager": "68219b7337b88a8d4b59df8b",
+    "isInternational": false,
+    "stations": [
+      { "station": "64a1f0010000000000000005" },
+      { "station": "64a1f0010000000000000017" },
+      { "station": "64a1f0010000000000000018" },
+      { "station": "64a1f0010000000000000002" }
+    ]
+  }
+]

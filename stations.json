@@ -1,0 +1,310 @@
+[
+  {
+    "name": "Berlin Hauptbahnhof",
+    "country": "Germany",
+    "city": "Berlin",
+    "code": "QDH",
+    "location": {
+      "longitude": 13.369181,
+      "latitude": 52.524929
+    },
+    "_id": { "$oid": "64a1f0010000000000000001" }
+  },
+  {
+    "name": "München Hauptbahnhof",
+    "country": "Germany",
+    "city": "München",
+    "code": "QDU",
+    "location": {
+      "longitude": 11.558333,
+      "latitude": 48.140278
+    },
+    "_id": { "$oid": "64a1f0010000000000000002" }
+  },
+  {
+    "name": "Frankfurt (Main) Hauptbahnhof",
+    "country": "Germany",
+    "city": "Frankfurt am Main",
+    "code": "QDF",
+    "location": {
+      "longitude": 8.663789,
+      "latitude": 50.107145
+    },
+    "_id": { "$oid": "64a1f0010000000000000003" }
+  },
+  {
+    "name": "Hamburg Hauptbahnhof",
+    "country": "Germany",
+    "city": "Hamburg",
+    "code": "QDH",
+    "location": {
+      "longitude": 10.006909,
+      "latitude": 53.552223
+    },
+    "_id": { "$oid": "64a1f0010000000000000004" }
+  },
+  {
+    "name": "Köln Hauptbahnhof",
+    "country": "Germany",
+    "city": "Köln",
+    "code": "QKL",
+    "location": {
+      "longitude": 6.958281,
+      "latitude": 50.942274
+    },
+    "_id": { "$oid": "64a1f0010000000000000005" }
+  },
+  {
+    "name": "Düsseldorf Hauptbahnhof",
+    "country": "Germany",
+    "city": "Düsseldorf",
+    "code": "QDU",
+    "location": {
+      "longitude": 6.793872,
+      "latitude": 51.219448
+    },
+    "_id": { "$oid": "64a1f0010000000000000006" }
+  },
+  {
+    "name": "Stuttgart Hauptbahnhof",
+    "country": "Germany",
+    "city": "Stuttgart",
+    "code": "QST",
+    "location": {
+      "longitude": 9.182932,
+      "latitude": 48.783333
+    },
+    "_id": { "$oid": "64a1f0010000000000000007" }
+  },
+  {
+    "name": "Leipzig Hauptbahnhof",
+    "country": "Germany",
+    "city": "Leipzig",
+    "code": "QLZ",
+    "location": {
+      "longitude": 12.379999,
+      "latitude": 51.345556
+    },
+    "_id": { "$oid": "64a1f0010000000000000008" }
+  },
+  {
+    "name": "Hannover Hauptbahnhof",
+    "country": "Germany",
+    "city": "Hannover",
+    "code": "QHA",
+    "location": {
+      "longitude": 9.735686,
+      "latitude": 52.379189
+    },
+    "_id": { "$oid": "64a1f0010000000000000009" }
+  },
+  {
+    "name": "Bremen Hauptbahnhof",
+    "country": "Germany",
+    "city": "Bremen",
+    "code": "QBR",
+    "location": {
+      "longitude": 8.813553,
+      "latitude": 53.083333
+    },
+    "_id": { "$oid": "64a1f0010000000000000010" }
+  },
+   {
+    "name": "Potsdam Hauptbahnhof",
+    "country": "Germany",
+    "city": "Potsdam",
+    "code": "QDP",
+    "location": {
+      "longitude": 13.063889,
+      "latitude": 52.391111
+    },
+    "_id": { "$oid": "64a1f0010000000000000011" }
+  },
+  {
+    "name": "Cottbus Hauptbahnhof",
+    "country": "Germany",
+    "city": "Cottbus",
+    "code": "QDC",
+    "location": {
+      "longitude": 14.325278,
+      "latitude": 51.756111
+    },
+    "_id": { "$oid": "64a1f0010000000000000012" }
+  },
+  {
+    "name": "Dresden Hauptbahnhof",
+    "country": "Germany",
+    "city": "Dresden",
+    "code": "QDD",
+    "location": {
+      "longitude": 13.731389,
+      "latitude": 51.040833
+    },
+    "_id": { "$oid": "64a1f0010000000000000013" }
+  },
+  {
+    "name": "Chemnitz Hauptbahnhof",
+    "country": "Germany",
+    "city": "Chemnitz",
+    "code": "QDC",
+    "location": {
+      "longitude": 12.929444,
+      "latitude": 50.832222
+    },
+    "_id": { "$oid": "64a1f0010000000000000014" }
+  },
+  {
+    "name": "Magdeburg Hauptbahnhof",
+    "country": "Germany",
+    "city": "Magdeburg",
+    "code": "QDM",
+    "location": {
+      "longitude": 11.627778,
+      "latitude": 52.131944
+    },
+    "_id": { "$oid": "64a1f0010000000000000015" }
+  },
+  {
+    "name": "Halle (Saale) Hauptbahnhof",
+    "country": "Germany",
+    "city": "Halle (Saale)",
+    "code": "QDH",
+    "location": {
+      "longitude": 11.983333,
+      "latitude": 51.4775
+    },
+    "_id": { "$oid": "64a1f0010000000000000016" }
+  },
+  {
+    "name": "Erfurt Hauptbahnhof",
+    "country": "Germany",
+    "city": "Erfurt",
+    "code": "QDE",
+    "location": {
+      "longitude": 11.033333,
+      "latitude": 50.9725
+    },
+    "_id": { "$oid": "64a1f0010000000000000017" }
+  },
+  {
+    "name": "Jena Paradies",
+    "country": "Germany",
+    "city": "Jena",
+    "code": "QDJ",
+    "location": {
+      "longitude": 11.595,
+      "latitude": 50.9275
+    },
+    "_id": { "$oid": "64a1f0010000000000000018" }
+  },
+  {
+    "name": "Kiel Hauptbahnhof",
+    "country": "Germany",
+    "city": "Kiel",
+    "code": "QDK",
+    "location": {
+      "longitude": 10.133889,
+      "latitude": 54.323333
+    },
+    "_id": { "$oid": "64a1f0010000000000000019" }
+  },
+  {
+    "name": "Lübeck Hauptbahnhof",
+    "country": "Germany",
+    "city": "Lübeck",
+    "code": "QDL",
+    "location": {
+      "longitude": 10.6875,
+      "latitude": 53.865
+    },
+    "_id": { "$oid": "64a1f0010000000000000020" }
+  },
+  {
+    "name": "Rostock Hauptbahnhof",
+    "country": "Germany",
+    "city": "Rostock",
+    "code": "QDR",
+    "location": {
+      "longitude": 12.099722,
+      "latitude": 54.083333
+    },
+    "_id": { "$oid": "64a1f0010000000000000021" }
+  },
+  {
+    "name": "Wismar Bahnhof",
+    "country": "Germany",
+    "city": "Wismar",
+    "code": "QDW",
+    "location": {
+      "longitude": 11.460278,
+      "latitude": 53.893889
+    },
+    "_id": { "$oid": "64a1f0010000000000000022" }
+  },
+  {
+    "name": "Mainz Hauptbahnhof",
+    "country": "Germany",
+    "city": "Mainz",
+    "code": "QDM",
+    "location": {
+      "longitude": 8.270833,
+      "latitude": 49.998611
+    },
+    "_id": { "$oid": "64a1f0010000000000000023" }
+  },
+  {
+    "name": "Koblenz Hauptbahnhof",
+    "country": "Germany",
+    "city": "Koblenz",
+    "code": "QDKZ",
+    "location": {
+      "longitude": 7.606111,
+      "latitude": 50.356389
+    },
+    "_id": { "$oid": "64a1f0010000000000000024" }
+  },
+  {
+    "name": "Saarbrücken Hauptbahnhof",
+    "country": "Germany",
+    "city": "Saarbrücken",
+    "code": "QDS",
+    "location": {
+      "longitude": 6.996111,
+      "latitude": 49.243056
+    },
+    "_id": { "$oid": "64a1f0010000000000000025" }
+  },
+  {
+    "name": "Oldenburg Hauptbahnhof",
+    "country": "Germany",
+    "city": "Oldenburg",
+    "code": "QDO",
+    "location": {
+      "longitude": 8.209722,
+      "latitude": 53.142222
+    },
+    "_id": { "$oid": "64a1f0010000000000000026" }
+  },
+  {
+    "name": "Osnabrück Hauptbahnhof",
+    "country": "Germany",
+    "city": "Osnabrück",
+    "code": "QDOZ",
+    "location": {
+      "longitude": 8.048056,
+      "latitude": 52.279444
+    },
+    "_id": { "$oid": "64a1f0010000000000000027" }
+  },
+  {
+    "name": "Braunschweig Hauptbahnhof",
+    "country": "Germany",
+    "city": "Braunschweig",
+    "code": "QDB",
+    "location": {
+      "longitude": 10.524167,
+      "latitude": 52.264722
+    },
+    "_id": { "$oid": "64a1f0010000000000000028" }
+  }
+]
