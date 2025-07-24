@@ -4,17 +4,21 @@ const officeCarService = require('../../services/Cars/officeCarService');
 const { protect, allowTo } = require('../../services/authServices');
 const carValidator = require('../../utils/validators/Cars/carValidator');
 
-router.get('/:carId',
-    officeCarService.getCarById
-);
-
-router.get('/', officeCarService.getAllCars);
 
 router.get('/bookings',
     protect,
     allowTo('officeManager', 'admin'),
     officeCarService.getOfficeBookings
 );
+
+
+router.get('/:carId',
+    officeCarService.getCarById
+);
+
+router.get('/', officeCarService.getAllCars);
+
+
 
 router.post('/',
     protect,

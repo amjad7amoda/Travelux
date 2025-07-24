@@ -323,41 +323,222 @@ exports.getManagerTrips = asyncHandler(async (req, res, next) => {
     });
 });
 
+// @desc Get the count and revenue of the train trips
+// @route GET '/api/train-trips/statistics/counters'
+// @access Private (admin, routeManager)
 exports.getCountAndRevenue = asyncHandler(async (req, res, next) => {
     const user = req.user;
 
     const routes = await Route.find({ routeManager: user._id }, '_id');
     const routeIds = routes.map(route => route._id);
-    //Completed trips
-    const completedTrips = await TrainTrip.countDocuments({ 
+
+    const trips = await TrainTrip.countDocuments({ route: { $in: routeIds } });
+    console.log(trips);
+    //Calculate the start and end dates of the current and previous months
+    const now = new Date();
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    // Completed Trips
+    const completedCurrent = await TrainTrip.countDocuments({
         route: { $in: routeIds },
-        status: 'completed' 
+        status: 'completed',
+        createdAt: { $gte: startOfCurrentMonth, $lte: now }
     });
-    //Active trips (onWay, preparing )
-    const activeTrips = await TrainTrip.countDocuments({ 
+
+    const completedPrevious = await TrainTrip.countDocuments({
         route: { $in: routeIds },
-        status: { $in: ['onWay', 'preparing'] } 
+        status: 'completed',
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth }
     });
-    //Cancelled trips
-    const cancelledTrips = await TrainTrip.countDocuments({ 
+    let completedChange = 0;
+    if (completedPrevious > 0) {
+        completedChange = ((completedCurrent - completedPrevious) / completedPrevious) * 100;
+    } else if (completedCurrent > 0) {
+        completedChange = 100;
+    }
+    completedChange = Math.round(completedChange * 100) / 100;
+    let completedTrend = 'neutral';
+    if (completedChange > 0) completedTrend = 'up';
+    else if (completedChange < 0) completedTrend = 'down';
+
+    // Active Trips (onWay, preparing)
+    const activeCurrent = await TrainTrip.countDocuments({
         route: { $in: routeIds },
-        status: 'cancelled'
-     });
-    //Total revenue from paid tickets
-    const revenueAgg = await TrainTripBooking.aggregate([
-        { $match: { paymentStatus: 'paid', status: 'active' } },
+        status: { $in: ['onWay', 'preparing'] }
+    });
+
+    // Cancelled Trips
+    const cancelledCurrent = await TrainTrip.countDocuments({
+        route: { $in: routeIds },
+        status: 'cancelled',
+        createdAt: { $gte: startOfCurrentMonth, $lte: now }
+    });
+    const cancelledPrevious = await TrainTrip.countDocuments({
+        route: { $in: routeIds },
+        status: 'cancelled',
+        createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth }
+    });
+    let cancelledChange = 0;
+    if (cancelledPrevious > 0) {
+        cancelledChange = ((cancelledCurrent - cancelledPrevious) / cancelledPrevious) * 100;
+    } else if (cancelledCurrent > 0) {
+        cancelledChange = 100;
+    }
+    cancelledChange = Math.round(cancelledChange * 100) / 100;
+    let cancelledTrend = 'neutral';
+    if (cancelledChange > 0) cancelledTrend = 'up';
+    else if (cancelledChange < 0) cancelledTrend = 'down';
+
+    // Total revenue (paid tickets)
+    const revenueCurrentAgg = await TrainTripBooking.aggregate([
+        { $match: { paymentStatus: 'paid', status: 'active', createdAt: { $gte: startOfCurrentMonth, $lte: now } } },
         { $group: { _id: null, total: { $sum: '$totalPrice' } } }
     ]);
-    const totalRevenue = revenueAgg.length > 0 ? revenueAgg[0].total : 0;
+    const revenuePreviousAgg = await TrainTripBooking.aggregate([
+        { $match: { paymentStatus: 'paid', status: 'active', createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth } } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } }
+    ]);
+    const revenueCurrent = revenueCurrentAgg.length > 0 ? revenueCurrentAgg[0].total : 0;
+    const revenuePrevious = revenuePreviousAgg.length > 0 ? revenuePreviousAgg[0].total : 0;
+    let revenueChange = 0;
+    if (revenuePrevious > 0) {
+        revenueChange = ((revenueCurrent - revenuePrevious) / revenuePrevious) * 100;
+    } else if (revenueCurrent > 0) {
+        revenueChange = 100;
+    }
+    revenueChange = Math.round(revenueChange * 100) / 100;
+    let revenueTrend = 'neutral';
+    if (revenueChange > 0) revenueTrend = 'up';
+    else if (revenueChange < 0) revenueTrend = 'down';
 
+
+    
     return res.json({
         status: 'success',
         data: {
-            completedTrips,
-            activeTrips,
-            cancelledTrips,
-            totalRevenue
+            completedTrips: {
+                current: completedCurrent,
+                previous: completedPrevious,
+                change: completedChange,
+                trend: completedTrend
+            },
+            activeTrips: activeCurrent,
+            cancelledTrips: {
+                current: cancelledCurrent,
+                previous: cancelledPrevious,
+                change: cancelledChange,
+                trend: cancelledTrend
+            },
+            totalRevenue: {
+                current: revenueCurrent,
+                previous: revenuePrevious,
+                change: revenueChange,
+                trend: revenueTrend
+            }
         }
+    });
+});
+
+// @desc Get ticket sales stats (by day in week or by week in month)
+// @route GET /api/train-trips/statistics/ticket-sales?period=week|month
+// @access Private (admin, routeManager)
+exports.getTicketSalesStats = asyncHandler(async (req, res, next) => {
+    const period = req.query.period || 'week'; // default: week
+    const user = req.user;
+
+    let labels = [];
+    let data = [];
+    let match = {};
+
+    // If the user is routeManager, filter the bookings by the trips he manages
+    if (user.role !== 'admin') {
+        const routes = await Route.find({ routeManager: user._id }, '_id');
+        const routeIds = routes.map(route => route._id);
+        const trips = await TrainTrip.find({ route: { $in: routeIds } }, '_id');
+        const tripIds = trips.map(trip => trip._id);
+        match.trainTrip = { $in: tripIds };
+    }
+
+    if (period === 'week') {
+        // احسب بداية ونهاية الأسبوع الحالي (الأحد إلى السبت)
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0,0,0,0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+        match.createdAt = { $gte: startOfWeek, $lt: endOfWeek };
+
+        // اجمع عدد التذاكر لكل يوم
+        const ticketsPerDay = await TrainTripBooking.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: { $dayOfWeek: "$createdAt" }, // 1=Sunday, 7=Saturday
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // جهز النتائج مرتبة من الأحد إلى السبت
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        labels = days;
+        data = Array(7).fill(0);
+        ticketsPerDay.forEach(item => {
+            // Mongo: 1=Sunday, JS: 0=Sunday
+            data[item._id - 1] = item.count;
+        });
+
+    } else if (period === 'month') {
+        // احسب بداية ونهاية الشهر الحالي
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+        match.createdAt = { $gte: startOfMonth, $lt: endOfMonth };
+
+        // اجمع عدد التذاكر لكل أسبوع
+        const ticketsPerWeek = await TrainTripBooking.aggregate([
+            { $match: match },
+            {
+                $group: {
+                    _id: {
+                        $ceil: {
+                            $divide: [
+                                { $add: [{ $dayOfMonth: "$createdAt" }, 6] },
+                                7
+                            ]
+                        }
+                    },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        // جهز النتائج 4 أسابيع
+        labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        data = Array(4).fill(0);
+        ticketsPerWeek.forEach(item => {
+            if (item._id >= 1 && item._id <= 4) {
+                data[item._id - 1] = item.count;
+            }
+        });
+    } else {
+        return next(new ApiError('Invalid period. Use week or month.', 400));
+    }
+
+    // مجموع التذاكر
+    const total = data.reduce((a, b) => a + b, 0);
+
+    return res.json({
+        status: 'success',
+        period,
+        totalTickets: total,
+        labels,
+        data
     });
 });
 

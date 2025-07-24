@@ -114,6 +114,11 @@ exports.updateCar = asyncHandler(async (req, res) => {
       car.booked_until = req.body.booked_until;
     }
   }
+
+  if(req.body.pricePerDay) {
+    car.pricePerDay = req.body.pricePerDay;
+  }
+
   await car.save();
   res.json({ status: 'success', message: 'Car updated successfully', data: { car } });
 });

@@ -28,6 +28,11 @@ router.put('/:id',
     trainTripServices.updateTrainTrip
 );
 
+router.get('/statistics/ticket-sales', 
+    protect,
+    allowTo('admin', 'routeManager'),
+    trainTripServices.getTicketSalesStats);
+
 router.get('/statistics/counters',
     protect,
     allowTo('admin', 'routeManager'),

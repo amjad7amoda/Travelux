@@ -65,6 +65,6 @@ const trainTripSchema = mongoose.Schema({
         arrivalTimeStr: String,
         departureTimeStr: String
     }]
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('TrainTrip', trainTripSchema);

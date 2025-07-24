@@ -118,12 +118,16 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
 
     let { status, addSeats, removeSeats } = req.body;
 
+
+
     //Cancel booking
     if (status === 'cancelled') {
         trainTrip.availableSeats += trainTripBooking.numOfSeats;
         await trainTripBooking.deleteOne();
         trainTrip.save();
         return res.json({ status: 'success', message: 'Your booking has been cancelled.' });
+    }else{
+        trainTrip.status = status;
     }
    
     // Add seats

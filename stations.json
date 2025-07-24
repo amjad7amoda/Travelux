@@ -7,8 +7,7 @@
     "location": {
       "longitude": 13.369181,
       "latitude": 52.524929
-    },
-    "_id": { "$oid": "64a1f0010000000000000001" }
+    }
   },
   {
     "name": "München Hauptbahnhof",
@@ -18,8 +17,7 @@
     "location": {
       "longitude": 11.558333,
       "latitude": 48.140278
-    },
-    "_id": { "$oid": "64a1f0010000000000000002" }
+    }
   },
   {
     "name": "Frankfurt (Main) Hauptbahnhof",
@@ -29,8 +27,7 @@
     "location": {
       "longitude": 8.663789,
       "latitude": 50.107145
-    },
-    "_id": { "$oid": "64a1f0010000000000000003" }
+    }
   },
   {
     "name": "Hamburg Hauptbahnhof",
@@ -40,8 +37,7 @@
     "location": {
       "longitude": 10.006909,
       "latitude": 53.552223
-    },
-    "_id": { "$oid": "64a1f0010000000000000004" }
+    }
   },
   {
     "name": "Köln Hauptbahnhof",
@@ -51,8 +47,7 @@
     "location": {
       "longitude": 6.958281,
       "latitude": 50.942274
-    },
-    "_id": { "$oid": "64a1f0010000000000000005" }
+    }
   },
   {
     "name": "Düsseldorf Hauptbahnhof",
@@ -62,8 +57,7 @@
     "location": {
       "longitude": 6.793872,
       "latitude": 51.219448
-    },
-    "_id": { "$oid": "64a1f0010000000000000006" }
+    }
   },
   {
     "name": "Stuttgart Hauptbahnhof",
@@ -73,8 +67,7 @@
     "location": {
       "longitude": 9.182932,
       "latitude": 48.783333
-    },
-    "_id": { "$oid": "64a1f0010000000000000007" }
+    }
   },
   {
     "name": "Leipzig Hauptbahnhof",
@@ -84,8 +77,7 @@
     "location": {
       "longitude": 12.379999,
       "latitude": 51.345556
-    },
-    "_id": { "$oid": "64a1f0010000000000000008" }
+    }
   },
   {
     "name": "Hannover Hauptbahnhof",
@@ -95,8 +87,7 @@
     "location": {
       "longitude": 9.735686,
       "latitude": 52.379189
-    },
-    "_id": { "$oid": "64a1f0010000000000000009" }
+    }
   },
   {
     "name": "Bremen Hauptbahnhof",
@@ -106,8 +97,7 @@
     "location": {
       "longitude": 8.813553,
       "latitude": 53.083333
-    },
-    "_id": { "$oid": "64a1f0010000000000000010" }
+    }
   },
    {
     "name": "Potsdam Hauptbahnhof",
@@ -117,8 +107,7 @@
     "location": {
       "longitude": 13.063889,
       "latitude": 52.391111
-    },
-    "_id": { "$oid": "64a1f0010000000000000011" }
+    }
   },
   {
     "name": "Cottbus Hauptbahnhof",
@@ -128,8 +117,7 @@
     "location": {
       "longitude": 14.325278,
       "latitude": 51.756111
-    },
-    "_id": { "$oid": "64a1f0010000000000000012" }
+    }
   },
   {
     "name": "Dresden Hauptbahnhof",
@@ -139,8 +127,7 @@
     "location": {
       "longitude": 13.731389,
       "latitude": 51.040833
-    },
-    "_id": { "$oid": "64a1f0010000000000000013" }
+    }
   },
   {
     "name": "Chemnitz Hauptbahnhof",
@@ -150,8 +137,7 @@
     "location": {
       "longitude": 12.929444,
       "latitude": 50.832222
-    },
-    "_id": { "$oid": "64a1f0010000000000000014" }
+    }
   },
   {
     "name": "Magdeburg Hauptbahnhof",
@@ -161,8 +147,7 @@
     "location": {
       "longitude": 11.627778,
       "latitude": 52.131944
-    },
-    "_id": { "$oid": "64a1f0010000000000000015" }
+    }
   },
   {
     "name": "Halle (Saale) Hauptbahnhof",
@@ -172,8 +157,7 @@
     "location": {
       "longitude": 11.983333,
       "latitude": 51.4775
-    },
-    "_id": { "$oid": "64a1f0010000000000000016" }
+    }
   },
   {
     "name": "Erfurt Hauptbahnhof",
@@ -183,8 +167,7 @@
     "location": {
       "longitude": 11.033333,
       "latitude": 50.9725
-    },
-    "_id": { "$oid": "64a1f0010000000000000017" }
+    }
   },
   {
     "name": "Jena Paradies",
@@ -194,8 +177,7 @@
     "location": {
       "longitude": 11.595,
       "latitude": 50.9275
-    },
-    "_id": { "$oid": "64a1f0010000000000000018" }
+    }
   },
   {
     "name": "Kiel Hauptbahnhof",
@@ -205,8 +187,7 @@
     "location": {
       "longitude": 10.133889,
       "latitude": 54.323333
-    },
-    "_id": { "$oid": "64a1f0010000000000000019" }
+    }
   },
   {
     "name": "Lübeck Hauptbahnhof",
@@ -216,8 +197,7 @@
     "location": {
       "longitude": 10.6875,
       "latitude": 53.865
-    },
-    "_id": { "$oid": "64a1f0010000000000000020" }
+    }
   },
   {
     "name": "Rostock Hauptbahnhof",
@@ -227,8 +207,7 @@
     "location": {
       "longitude": 12.099722,
       "latitude": 54.083333
-    },
-    "_id": { "$oid": "64a1f0010000000000000021" }
+    }
   },
   {
     "name": "Wismar Bahnhof",
@@ -238,8 +217,7 @@
     "location": {
       "longitude": 11.460278,
       "latitude": 53.893889
-    },
-    "_id": { "$oid": "64a1f0010000000000000022" }
+    }
   },
   {
     "name": "Mainz Hauptbahnhof",
@@ -249,8 +227,7 @@
     "location": {
       "longitude": 8.270833,
       "latitude": 49.998611
-    },
-    "_id": { "$oid": "64a1f0010000000000000023" }
+    }
   },
   {
     "name": "Koblenz Hauptbahnhof",
@@ -260,8 +237,7 @@
     "location": {
       "longitude": 7.606111,
       "latitude": 50.356389
-    },
-    "_id": { "$oid": "64a1f0010000000000000024" }
+    }
   },
   {
     "name": "Saarbrücken Hauptbahnhof",
@@ -271,8 +247,7 @@
     "location": {
       "longitude": 6.996111,
       "latitude": 49.243056
-    },
-    "_id": { "$oid": "64a1f0010000000000000025" }
+    }
   },
   {
     "name": "Oldenburg Hauptbahnhof",
@@ -282,8 +257,7 @@
     "location": {
       "longitude": 8.209722,
       "latitude": 53.142222
-    },
-    "_id": { "$oid": "64a1f0010000000000000026" }
+    }
   },
   {
     "name": "Osnabrück Hauptbahnhof",
@@ -293,8 +267,7 @@
     "location": {
       "longitude": 8.048056,
       "latitude": 52.279444
-    },
-    "_id": { "$oid": "64a1f0010000000000000027" }
+    }
   },
   {
     "name": "Braunschweig Hauptbahnhof",
@@ -304,7 +277,6 @@
     "location": {
       "longitude": 10.524167,
       "latitude": 52.264722
-    },
-    "_id": { "$oid": "64a1f0010000000000000028" }
+    }
   }
 ]
