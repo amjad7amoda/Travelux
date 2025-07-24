@@ -73,7 +73,7 @@ exports.getMyOffice = asyncHandler(async (req, res, next) => {
   });
 
   if(!office) 
-    return next(new ApiError(`You don't have any office`, 400));
+    return res.status(200).json({ status: 'SUCCESS', data: { office: [] } });
   
   const carsCount = await Car.countDocuments({ office: office._id });
 

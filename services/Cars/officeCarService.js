@@ -148,5 +148,6 @@ exports.getOfficeBookings = asyncHandler(async (req, res) => {
     path: 'user',
     select: 'firstName lastName email'
   }]);
+  
   res.json({ status: 'success', message: 'Office bookings fetched successfully', data: { bookings } });
 });
