@@ -146,7 +146,14 @@ exports.cancelBooking = asyncHandler(async (req, res) => {
 // @route   GET /api/cars/bookings/:id
 // @desc    Get a car booking by ID
 // @access  Public
-exports.getBookingById = factory.GetOne(CarBooking, 'car');
+exports.getBookingById = factory.GetOne(CarBooking, {
+  path: 'car',
+  select: 'brand model images',
+  populate:{
+    path: 'office',
+    select: 'name city counntry phone'
+  }
+});
 
 // @route   GET /api/cars/bookings
 // @desc    Get all car bookings
@@ -157,7 +164,18 @@ exports.getAllBookings = factory.GetAll(CarBooking, 'car');
 // @desc    Get all my car bookings
 // @access  Private (User)
 exports.getMyBookings = asyncHandler(async (req, res) => {
-  const bookings = await CarBooking.find({ user: req.user._id });
+  const bookings = await CarBooking.find({ user: req.user._id }).populate({
+    path: 'car',
+    select: 'brand model images',
+    populate:{
+      path: 'office',
+      select: 'name city counntry phone'
+    }
+  });
+
+  if(bookings.length === 0)
+    return res.status(404).json({ status: 'fail', message: 'No bookings found' });
+  
   res.json({ status: 'success', message: 'My bookings fetched successfully', data: { bookings } });
 });
 
