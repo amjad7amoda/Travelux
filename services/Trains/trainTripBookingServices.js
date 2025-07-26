@@ -112,11 +112,11 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
     if(trainTripBooking.user.toString() !== user._id.toString())
         return next(new ApiError("You don't have permission to update this booking", 400));
 
+    const trainTrip = await TrainTrip.findById(trainTripBooking.trainTrip);
     if(trainTrip.departureTime.getTime() - Date.now() < 24 * 60 * 60000)
         return next(new ApiError(`You can't update your booking anymore.`));
 
     let { status, addSeats, removeSeats } = req.body;
-
 
 
     //Cancel booking
@@ -158,6 +158,9 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
     res.json({ success: true, trainTripBooking });
 });
 
+// @desc Get train booking for a user
+// @route GET /api/train-trip-bookings/:id
+// @access Public (for user)
 exports.getBookingById = asyncHandler(async (req, res, next) => {
   const booking = await TrainTripBooking.findById(req.params.id)
     .populate({
