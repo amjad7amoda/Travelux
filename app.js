@@ -34,6 +34,7 @@ const userFcmTokenRouter = require('./routes/userFcmTokenRoute');
 
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
+const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 
 //======== Config Requirement ========//
 env.config();
@@ -50,6 +51,7 @@ app.use(cors());
 //======== Jobs ===========//
 scheduleTrainStatusCheck();
 scheduleFlightStatusCheck();
+scheduleCarStatusCheck();
 
 //======== Routes =========//
 app.use('/api/server-status', serverStatusRouter);

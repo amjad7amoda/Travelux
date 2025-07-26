@@ -15,6 +15,33 @@ router.get('/my-office',
   carRentalOfficeService.getMyOffice
 );
 
+// @route   GET /api/offices/statistics/top-rented-cars-by-days
+// @desc    Get top ${limit} most rented cars in an office
+// @access  Private (Office Manager)
+router.get('/statistics/top-rented-cars-by-days',
+  protect,
+  allowTo('officeManager'),
+  carRentalOfficeService.getTopRentedCarsByDays
+);
+
+// @route   GET /api/offices/statistics/top-rented-cars-by-bookings
+// @desc    Get top ${limit} most rented cars by bookings in an office
+// @access  Private (Office Manager)
+router.get('/statistics/top-rented-cars-by-bookings',
+  protect,
+  allowTo('officeManager'),
+  carRentalOfficeService.getTopRentedCarsByBookings
+);
+
+// @route   GET /api/offices/statistics/counters
+// @desc    Get statistics for the car rental office (counts, revenue, trends)
+// @access  Private (Office Manager)
+router.get('/statistics/counters',
+  protect,
+  allowTo('officeManager'),
+  carRentalOfficeService.getOfficeCounters
+);
+
 
 router.post('/',
     protect,
@@ -34,8 +61,6 @@ router.get('/:id',
   carRentalOfficeService.getOffice
 );
 
-
-
 router.put(
   '/:id',
   validObjectId,
@@ -46,13 +71,5 @@ router.put(
   carRentalOfficeService.resizeOfficeCoverImage,
   carRentalOfficeService.updateOffice
 );
-
-// router.delete(
-//   '/:id',
-//   validObjectId,
-//   protect,
-//   allowTo('officeManager', 'admin'),
-//   handlerFactory.DeleteOne(CarRentalOffice)
-// );
 
 module.exports = router; 
