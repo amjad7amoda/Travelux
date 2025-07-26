@@ -8,6 +8,14 @@ const { createOfficeValidator, updateOfficeValidator } = require('../../utils/va
 const validObjectId = require('../../middlewares/validObjectId');
 
 
+
+router.get('/my-office',
+  protect,
+  allowTo('officeManager'),
+  carRentalOfficeService.getMyOffice
+);
+
+
 router.post('/',
     protect,
     allowTo('officeManager', 'admin'),
@@ -26,11 +34,7 @@ router.get('/:id',
   carRentalOfficeService.getOffice
 );
 
-router.get('/my-office',
-  protect,
-  allowTo('officeManager'),
-  carRentalOfficeService.getMyOffice
-);
+
 
 router.put(
   '/:id',

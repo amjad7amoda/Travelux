@@ -59,7 +59,7 @@ exports.createOffice = asyncHandler(async (req, res, next) => {
 // @access Public
 exports.getAllOffices = handlerFactory.GetAll(CarRentalOffice, 'carRentalOffice', {
     path: 'officeManager',
-    select: 'name email'
+    select: 'firstName lastName email'
 });
 
 // @desc Get a single car rental office by ID
@@ -67,22 +67,27 @@ exports.getAllOffices = handlerFactory.GetAll(CarRentalOffice, 'carRentalOffice'
 // @access Public
 exports.getMyOffice = asyncHandler(async (req, res, next) => {
   const user = req.user;
-  const office = await CarRentalOffice.find({ officeManager: user._id });
+  const office = await CarRentalOffice.findOne({ officeManager: user._id }).populate({
+    path: 'officeManager',
+    select: 'firstName lastName email role'
+  });
 
-  if(!office) {
-    return next(new ApiError(`You don't have any office`, 400));
-  }
-
-  const caraCount = await Car.countDocuments({ office: office._id });
+  if(!office) 
+    return res.status(200).json({ status: 'SUCCESS', data: { office: [] } });
+  
+  const carsCount = await Car.countDocuments({ office: office._id });
 
   res.status(200).json({ status: 'SUCCESS', data: { 
-    cars: caraCount, office 
+    office:{
+      cars: carsCount,
+      ...office._doc
+    }
   } });
 })
 
 exports.getOffice = handlerFactory.GetOne(CarRentalOffice, {
   path: 'officeManager',
-  select: 'firstName lastName email'
+  select: 'firstName lastName email role'
 });
 
 // @desc Update a car rental office
@@ -121,7 +126,10 @@ exports.updateOffice = asyncHandler(async (req, res, next) => {
       for (const car of cars) {
         if (Array.isArray(car.images)) {
           const newImages = car.images.map(img =>
-            img.replace(`/uploads/offices/${oldOffice.name}/`, `/uploads/offices/${req.body.name}/`)
+            img.replace(
+              `/uploads/offices/${oldOffice.name.replace(/\s+/g, '_')}/`,
+              `/uploads/offices/${req.body.name.replace(/\s+/g, '_')}/`
+            )          
           );
           await Car.findByIdAndUpdate(car._id, { images: newImages });
         }

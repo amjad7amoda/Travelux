@@ -105,18 +105,19 @@ exports.bookTrainTrip = asyncHandler( async(req, res, next) => {
 // @route PUT /api/train-trip-bookings/
 // @access Public (for user)
 exports.updateBooking = asyncHandler(async (req, res, next) => {
-    const trainTrip = await TrainTrip.findById(req.params.id);
-    if (!trainTrip) return next(new ApiError("Train trip not found", 400));
-
-    const user = req.user._id;
-    const trainTripBooking = await TrainTripBooking.findOne({ trainTrip: trainTrip._id, user });
+    const user = req.user;
+    const trainTripBooking = await TrainTripBooking.findById({_id: req.params.id, user: user._id});
 
     if (!trainTripBooking) return next(new ApiError("Booking not found", 400));
+    if(trainTripBooking.user.toString() !== user._id.toString())
+        return next(new ApiError("You don't have permission to update this booking", 400));
 
+    const trainTrip = await TrainTrip.findById(trainTripBooking.trainTrip);
     if(trainTrip.departureTime.getTime() - Date.now() < 24 * 60 * 60000)
         return next(new ApiError(`You can't update your booking anymore.`));
 
     let { status, addSeats, removeSeats } = req.body;
+
 
     //Cancel booking
     if (status === 'cancelled') {
@@ -124,6 +125,8 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
         await trainTripBooking.deleteOne();
         trainTrip.save();
         return res.json({ status: 'success', message: 'Your booking has been cancelled.' });
+    }else{
+        trainTrip.status = status;
     }
    
     // Add seats
@@ -155,6 +158,9 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
     res.json({ success: true, trainTripBooking });
 });
 
+// @desc Get train booking for a user
+// @route GET /api/train-trip-bookings/:id
+// @access Public (for user)
 exports.getBookingById = asyncHandler(async (req, res, next) => {
   const booking = await TrainTripBooking.findById(req.params.id)
     .populate({

@@ -24,7 +24,7 @@ function scheduleTrainStatusCheck() {
 
         // Update the trips that have reached the departure time
         const toOnWay = await TrainTrip.find({
-            status: { $ne: 'onWay' },
+            status: { $in: ['preparing'] },
             departureTime: { $lte: now },
             arrivalTime: { $gt: now }
         });
@@ -35,7 +35,7 @@ function scheduleTrainStatusCheck() {
         }
         // Update the status of the trips that have arrived
         const toCompleted = await TrainTrip.find({
-            status: { $ne: 'completed' },
+            status: { $in: ['onWay', 'preparing'] },
             arrivalTime: { $lte: now }
         });
         for (const trip of toCompleted) {

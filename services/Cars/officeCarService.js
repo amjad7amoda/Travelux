@@ -114,6 +114,11 @@ exports.updateCar = asyncHandler(async (req, res) => {
       car.booked_until = req.body.booked_until;
     }
   }
+
+  if(req.body.pricePerDay) {
+    car.pricePerDay = req.body.pricePerDay;
+  }
+
   await car.save();
   res.json({ status: 'success', message: 'Car updated successfully', data: { car } });
 });
@@ -136,6 +141,13 @@ exports.getOfficeBookings = asyncHandler(async (req, res) => {
   const cars = await require('../../models/Cars/carModel').find({ office: officeId }, '_id');
   const carIds = cars.map(car => car._id);
   //Get all bookings for the cars in the office
-  const bookings = await CarBooking.find({ car: { $in: carIds } }).populate('car');
+  const bookings = await CarBooking.find({ car: { $in: carIds } }).populate([{
+    path: 'car',
+    select: 'brand model year images pricePerDay'
+  },{
+    path: 'user',
+    select: 'firstName lastName email'
+  }]);
+  
   res.json({ status: 'success', message: 'Office bookings fetched successfully', data: { bookings } });
 });
