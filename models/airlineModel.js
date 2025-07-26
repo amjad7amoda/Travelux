@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const dotenv = require('dotenv');
 dotenv.config();
+const Plane = require("./planeModel");
 
 const airlineSchema = new mongoose.Schema({
     // sended by airline owner when creating the airline
@@ -37,17 +38,32 @@ const airlineSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    destinationCountries: {
+        type: String,
+        default: '+44',
+    },
 
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
 
 // get one && get all && update
-airlineSchema.post('init',(doc)=>{
+airlineSchema.post('init',async(doc)=>{
     if(doc.logo){
         const logoUrl =`http://localhost:${process.env.PORT}/airlines/${doc.logo}`;
         doc.logo = logoUrl;
     }
-    
 })
+
+airlineSchema.virtual('planesNum',{
+    ref:"Plane",
+    foreignField:"airline",
+    localField:"_id",
+    count:true
+});
 
 const Airline = mongoose.model("Airline", airlineSchema);
 

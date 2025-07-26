@@ -7,6 +7,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
 const factory = require('./handlersFactory');
 const ApiError = require('../utils/apiError');
+const ApiFeatures = require('../utils/apiFeatures');
 
 // 1-)airline logo upload
 exports.uploadAirlineImages = uploadSingleImage('logo');
@@ -64,7 +65,6 @@ exports.setAirlineOwner = asyncHandler(async (req, res, next) => {
 // @access public [user ,admin , airline owner]
 exports.getAirlines = factory.GetAll(Airline,'Airline');
 
-
 // @desc get specific airline
 // @route get /api/airlines/:id
 // @access public [user, admin , airline owner]
@@ -108,7 +108,7 @@ exports.updateAirline = asyncHandler(async (req, res, next) => {
 // @route get /api/airlines/myAirline
 // @access private [airline owner]
 exports.getOwnerAirline = asyncHandler(async (req, res, next) => {
-    const airline = await Airline.findOne({owner: req.user._id});
+    const airline = await Airline.findOne({owner: req.user._id}).populate('planesNum');
     if (!airline) {
         return next(new ApiError('You are not owner of any airline', 404));
     }

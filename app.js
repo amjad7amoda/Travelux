@@ -69,7 +69,7 @@ app.use('/api/routes', routeRouter);
 app.use('/api/train-trips', trainTripRouter);
 app.use('/api/train-trip-bookings', trainTripBookingRouter);
 
-app.use('/api/cities', citiesRouter);
+app.use('/api/data', citiesRouter);
 app.use('/api/flightTickets', flightTicketRouter);
 
 app.use('/api/cars', publicCarRoute);

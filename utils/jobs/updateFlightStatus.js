@@ -40,8 +40,6 @@ function scheduleFlightStatusCheck() {
                     );
                 }
             }
-
-            console.log('Flight statuses updated successfully');
         } catch (error) {
             console.error('Error updating flight statuses:', error);
         }
