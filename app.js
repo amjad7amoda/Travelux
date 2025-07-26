@@ -13,6 +13,7 @@ const userRouter = require('./routes/user');
 const hotelRouter = require('./routes/Hotels/hotelRoute');
 const roomRouter = require('./routes/Hotels/roomRoute');
 const hotelBookingRouter = require('./routes/Hotels/hotelBookingRoute');
+const hotelStatisticsRouter = require('./routes/Hotels/hotelStatisticsRoute');
 const airlineRouter = require('./routes/airlineRoute');
 const planeRouter = require('./routes/planeRoute');
 const flightRouter = require('./routes/flightRoute');
@@ -57,6 +58,7 @@ app.use('/api/users', userRouter);
 app.use('/api/hotels', hotelRouter);
 app.use('/api/hotels/:hotelId/rooms', roomRouter);
 app.use('/api/hotelBookings', hotelBookingRouter);
+app.use('/api/hotel-statistics', hotelStatisticsRouter);
 app.use('/api/airlines', airlineRouter);
 app.use('/api/planes', planeRouter);
 app.use('/api/flights', flightRouter);
@@ -83,4 +85,3 @@ app.listen(port, () => {
 });
 
 app.use(globalErrorHandler); //Error Handler
-    
