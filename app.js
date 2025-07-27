@@ -36,6 +36,8 @@ const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 
+const paymentRouter = require('./routes/paymentRoute');
+
 //======== Config Requirement ========//
 env.config();
 dbconnection();
@@ -80,6 +82,8 @@ app.use('/api/offices', carRentalOfficeRoute);
 app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
+
+app.use('/api/payments', paymentRouter);
 //======== Setup the server ========//
 const port = process.env.PORT;
 app.listen(port, () => {
