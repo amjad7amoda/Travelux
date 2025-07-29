@@ -2,6 +2,7 @@ const TrainTrip = require('../../models/Trains/trainTripModel');
 const Train = require('../../models/Trains/trainModel');
 const cron = require('node-cron');
 const asyncHandler = require('../../middlewares/asyncHandler');
+const TrainTripBooking = require('../../models/Trains/trainTripBookingModel')
 
 function scheduleTrainStatusCheck() {
     cron.schedule('* * * * *', asyncHandler(async () => {
@@ -42,6 +43,17 @@ function scheduleTrainStatusCheck() {
             trip.status = 'completed';
             await trip.save();
             console.log(`Train Service Update | Trip ${trip._id} is now completed`);
+        }
+
+        const completedBookings = await TrainTripBooking.find({
+            status: 'active',
+            arrivalTime: { $lt: Date.now() }
+        });
+
+        for(const book of completedBookings){
+            book.status = 'completed';
+            await book.save();
+            console.log('Completed Ticket')
         }
 
 

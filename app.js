@@ -36,7 +36,8 @@ const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 
-const paymentRouter = require('./routes/paymentRoute');
+const couponRouter = require('./routes/Payments/couponRoute');
+const cartRouter = require('./routes/Payments/cartRoute');
 
 //======== Config Requirement ========//
 env.config();
@@ -83,7 +84,9 @@ app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
 
-app.use('/api/payments', paymentRouter);
+app.use('/api/payments/coupons', couponRouter);
+app.use('/api/payments/carts', cartRouter);
+
 //======== Setup the server ========//
 const port = process.env.PORT;
 app.listen(port, () => {

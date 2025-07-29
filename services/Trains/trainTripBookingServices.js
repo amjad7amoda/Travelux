@@ -11,11 +11,15 @@ const { formatMinutesToHHMM } = require('../../utils/calculate');
 // @access Public (for user)
 exports.getAllTrainTripBookings = asyncHandler( async(req, res, next) => {
     const user = req.user;
-    const tripsBooking = await TrainTripBooking.find({ user: user._id })
-        .populate({
-            path: 'startStation endStation',
-            select: 'city'
-        });
+    const now = Date.now();
+    const tripsBooking = await TrainTripBooking.find({ 
+        user: user._id,
+        status: 'active'
+    })
+    .populate({
+        path: 'startStation endStation',
+        select: 'city'
+     });
 
     if(tripsBooking.length == 0)
         return next(new ApiError(`You don't have any train trips booking`, 400));
