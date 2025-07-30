@@ -55,7 +55,7 @@ const trainTripBookingSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'cancelled'],
+        enum: ['active', 'cancelled', 'completed'],
         default: 'active'
     },
     departureTime: {
