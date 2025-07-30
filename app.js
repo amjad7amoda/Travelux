@@ -83,6 +83,8 @@ app.use('/api/offices', carRentalOfficeRoute);
 app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
+app.use('/api/mynotifications', myNotificationRouter);
+
 //======== Setup the server ========//
 const port = process.env.PORT;
 app.listen(port, () => {
