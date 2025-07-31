@@ -26,7 +26,7 @@ class HotelStatisticsService {
             {
                 $match: {
                     hotel: { $in: hotelIds },
-                    status: 'paid'
+                    paymentStatus: 'paid'
                 }
             },
             {
@@ -86,7 +86,17 @@ class HotelStatisticsService {
             };
         }
 
-        const statusDistribution = await HotelBooking.aggregate([
+        const paymentStatusDistribution = await HotelBooking.aggregate([
+            { $match: { hotel: { $in: hotelIds } } },
+            {
+                $group: {
+                    _id: '$paymentStatus',
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const bookingStatusDistribution = await HotelBooking.aggregate([
             { $match: { hotel: { $in: hotelIds } } },
             {
                 $group: {
@@ -97,13 +107,24 @@ class HotelStatisticsService {
         ]);
 
         const result = {
-            pending_payment: 0,
-            paid: 0,
-            failed: 0
+            paymentStatus: {
+                pending_payment: 0,
+                paid: 0,
+                failed: 0
+            },
+            bookingStatus: {
+                active: 0,
+                expired: 0,
+                cancelled: 0
+            }
         };
 
-        statusDistribution.forEach(item => {
-            result[item._id] = item.count;
+        paymentStatusDistribution.forEach(item => {
+            result.paymentStatus[item._id] = item.count;
+        });
+
+        bookingStatusDistribution.forEach(item => {
+            result.bookingStatus[item._id] = item.count;
         });
 
         return result;
@@ -191,7 +212,7 @@ class HotelStatisticsService {
             {
                 $match: {
                     hotel: { $in: hotelIds },
-                    status: 'paid',
+                    paymentStatus: 'paid',
                     createdAt: { $gte: twelveMonthsAgo }
                 }
             },
@@ -231,7 +252,7 @@ class HotelStatisticsService {
             {
                 $match: {
                     hotel: { $in: hotelIds },
-                    status: 'paid'
+                    paymentStatus: 'paid'
                 }
             },
             {

@@ -35,6 +35,7 @@ const myNotificationRouter = require('./routes/myNotificationRoute');
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
+const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus');
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const cartRouter = require('./routes/Payments/cartRoute');
@@ -55,6 +56,7 @@ app.use(cors());
 scheduleTrainStatusCheck();
 scheduleFlightStatusCheck();
 scheduleCarStatusCheck();
+scheduleHotelRoomStatusCheck();
 
 //======== Routes =========//
 app.use('/api/server-status', serverStatusRouter);
