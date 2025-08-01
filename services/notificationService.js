@@ -14,7 +14,7 @@ exports.createNotification = async (userId, title, body, type) => {
         user: userId,
         title,
         body,
-        type : type || 'OTHER'
+        type : type || 'other'
     });
     // 2) Check if user has FCM token
     const userFcmToken = await UserFcmToken.findOne({ user: userId });
@@ -39,7 +39,7 @@ exports.createNotificationForMany = async (userIds, title, body, type) => {
             user: userId,
             title,
             body,
-            type: type || 'OTHER'
+            type: type || 'other'
         }))
     );
 

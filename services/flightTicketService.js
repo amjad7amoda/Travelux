@@ -102,7 +102,7 @@ exports.createTicket = asyncHandler(async (req, res, next) => {
 
     // send notification to the user
     await createNotification
-    (req.user._id, 'Ticket Booked', `You have booked a ticket for ${outboundFlight.flightNumber}`,"FLIGHT");
+    (req.user._id, 'Ticket Booked', `You have booked a ticket for ${outboundFlight.flightNumber}`,"flight");
 
     res.status(201).json({
         status: 'success',
