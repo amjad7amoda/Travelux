@@ -8,7 +8,7 @@ const { sendPushNotification, sendPushNotificationToMany } = require('../utils/s
 
 // @desc    Create and send notification to a user
 // @access  Private
-exports.createNotification = asyncHandler(async (userId, title, body, type) => {
+exports.createNotification = async (userId, title, body, type) => {
     // 1) Create notification in database
     const notification = await Notification.create({
         user: userId,
@@ -28,11 +28,11 @@ exports.createNotification = asyncHandler(async (userId, title, body, type) => {
     }
 
     return notification;
-});
+};
 
 // @desc    Create and send notification to multiple users
 // @access  Private
-exports.createNotificationForMany = asyncHandler(async (userIds, title, body, type) => {
+exports.createNotificationForMany = async (userIds, title, body, type) => {
     // 1) Create notifications in database for all users
     const notifications = await Notification.insertMany(
         userIds.map(userId => ({
@@ -59,7 +59,7 @@ exports.createNotificationForMany = asyncHandler(async (userIds, title, body, ty
     }
 
     return notifications;
-});
+};
 
 // @desc    Get notifications for a specific user
 // @route   GET /api/mynotifications

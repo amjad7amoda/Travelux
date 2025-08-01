@@ -25,12 +25,14 @@ const notificationSchema = new mongoose.Schema({
   type: {
     type: String,
     enum: [
-      'FLIGHT',   
-      'HOTEL',    
-      'TRAIN',    
-      'CAR',     
-      'SYSTEM',   
-      'OTHER'     
+      'flight',   
+      'hotel',    
+      'train',    
+      'car',
+      'trip',
+      'payment',
+      'promotion',
+      'other'     
     ],
     required: true
   }
