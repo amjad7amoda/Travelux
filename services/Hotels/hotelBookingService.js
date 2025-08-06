@@ -74,7 +74,10 @@ exports.getAllHotelBookings = asyncHandler(async (req, res, next) => {
 // @route GET /api/v1/hotelBookings/user
 // @access Private/User
 exports.getAllHotelBookingsForCurrentUser = asyncHandler(async (req, res, next) => {
-    const hotelBookings = await HotelBooking.find({ user: req.user._id }).populate('user', 'firstName lastName email avatar').populate('hotel', 'name city country coverImage').populate('room', 'roomNumber roomType');
+    const hotelBookings = await HotelBooking.find({
+        user: req.user._id,
+        status: 'active'
+    }).populate('user', 'firstName lastName email avatar').populate('hotel', 'name city country coverImage').populate('room', 'roomNumber roomType');
     res.status(200).json({
         status: 'SUCCESS',
         data: hotelBookings

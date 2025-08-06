@@ -4,6 +4,7 @@ const asyncHandler = require('../middlewares/asyncHandler');
 const ApiError = require('../utils/apiError');
 const factory = require('./handlersFactory');
 const Airline = require('../models/airlineModel');
+const { createNotification } = require('./notificationService');
 
 // ********************* Middlewares ********************* //
 
@@ -99,11 +100,14 @@ exports.createTicket = asyncHandler(async (req, res, next) => {
         airline: outboundFlight.airline._id
     });
 
-
+    // send notification to the user
+    await createNotification
+    (req.user._id, 'Ticket Booked', `You have booked a ticket for ${outboundFlight.flightNumber}`,"flight");
 
     res.status(201).json({
         status: 'success',
-        data: ticket
+        data: ticket,
+        notification: 'Notification sent successfully'
     });
 });
 

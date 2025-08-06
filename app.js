@@ -29,12 +29,13 @@ const carRentalOfficeRoute = require('./routes/Cars/carRentalOfficeRoute');
 const publicCarRoute = require('./routes/Cars/publicCarRoute');
 const officeCarRoute = require('./routes/Cars/officeCarRoute');
 const carBookingRoute = require('./routes/Cars/carBookingRoute');
-
 const userFcmTokenRouter = require('./routes/userFcmTokenRoute');
+const myNotificationRouter = require('./routes/myNotificationRoute');
 
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
+const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus');
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
@@ -55,6 +56,7 @@ app.use(cors());
 scheduleTrainStatusCheck();
 scheduleFlightStatusCheck();
 scheduleCarStatusCheck();
+scheduleHotelRoomStatusCheck();
 
 //======== Routes =========//
 app.use('/api/server-status', serverStatusRouter);
