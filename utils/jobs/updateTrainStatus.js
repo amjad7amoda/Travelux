@@ -45,6 +45,7 @@ function scheduleTrainStatusCheck() {
             console.log(`Train Service Update | Trip ${trip._id} is now completed`);
         }
 
+        //Update Train Trip Bookings To Complete So That Means It's Arrived.
         const completedBookings = await TrainTripBooking.find({
             status: 'active',
             arrivalTime: { $lt: Date.now() }

@@ -151,7 +151,7 @@ exports.getBookingById = factory.GetOne(CarBooking, {
   select: 'brand model images',
   populate:{
     path: 'office',
-    select: 'name city counntry phone'
+    select: 'name city country phone'
   }
 });
 
@@ -164,12 +164,17 @@ exports.getAllBookings = factory.GetAll(CarBooking, 'car');
 // @desc    Get all my car bookings
 // @access  Private (User)
 exports.getMyBookings = asyncHandler(async (req, res) => {
-  const bookings = await CarBooking.find({ user: req.user._id }).populate({
+
+  const bookings = await CarBooking.find({ 
+    user: req.user._id,
+    status: { $nin: ['cancelled', 'completed'] },
+    endDate: { $gt: new Date() }
+  }).populate({
     path: 'car',
     select: 'brand model images',
     populate:{
       path: 'office',
-      select: 'name city counntry phone'
+      select: 'name city country phone'
     }
   });
 
