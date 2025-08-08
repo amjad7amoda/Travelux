@@ -49,16 +49,20 @@ process.env.BASE_URL = `${process.env.PROTOCOL}://${process.env.HOST}:${process.
 app.use(express.static(path.join(__dirname, 'uploads')));
 
 //======== Middlewares =========//
-app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(cors());
 
-// Special middleware for Stripe webhooks to handle raw body
+// Special middleware for Stripe webhooks to handle raw body - MUST come before express.json()
 app.post(
-    '/webhook-checkout', 
+    '/api/payments/bill/webhook', 
     express.raw({ type: 'application/json' }), 
     billServices.createWebhook
 );
+
+// CORS middleware for all other routes
+app.use(cors());
+
+// Regular JSON middleware for all other routes
+app.use(express.json());
 
 //======== Jobs ===========//
 scheduleTrainStatusCheck();
