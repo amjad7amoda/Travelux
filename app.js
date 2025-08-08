@@ -31,7 +31,7 @@ const officeCarRoute = require('./routes/Cars/officeCarRoute');
 const carBookingRoute = require('./routes/Cars/carBookingRoute');
 const userFcmTokenRouter = require('./routes/userFcmTokenRoute');
 const myNotificationRouter = require('./routes/myNotificationRoute');
-
+const billServices = require('./services/Payments/billServices');
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
@@ -39,6 +39,7 @@ const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
+
 
 //======== Config Requirement ========//
 env.config();
@@ -51,6 +52,13 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors());
+
+// Special middleware for Stripe webhooks to handle raw body
+app.post(
+    '/webhook-checkout', 
+    express.raw({ type: 'application/json' }), 
+    billServices.createWebhook
+);
 
 //======== Jobs ===========//
 scheduleTrainStatusCheck();

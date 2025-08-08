@@ -259,7 +259,7 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
 
 // @desc Webhook for stripe
 // @route POST /api/payments/bill/webhook
-// @access Private(User)
+// @access Public (Stripe webhook)
 exports.createWebhook = asyncHandler(async(req, res, next) => {
     const sig = req.headers['stripe-signature'];
 
@@ -271,25 +271,109 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
             process.env.STRIPE_WEBHOOK_SECRET
         );
     } catch (err) {
+        console.error('Webhook verification failed:', err.message);
         return res.status(400).json({
             status: 'fail',
             message: `Webhook verification failed: ${err.message}`
         });
     }
 
-
     const {type, data} = event;
+    
+    console.log('Webhook event received:', type);
+    
     if(type === 'checkout.session.completed') {
-        const session = data.object;
-        const billId = session.metadata.billId;
-        const bill = await Bill.findById(billId);
-        if(!bill) {
-            return res.status(404).json({
+        try {
+            const session = data.object;
+            const billId = session.metadata.billId;
+            
+            if (!billId) {
+                console.error('No billId found in session metadata');
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'No billId found in session metadata'
+                });
+            }
+
+            const bill = await Bill.findById(billId);
+            if(!bill) {
+                console.error('Bill not found:', billId);
+                return res.status(404).json({
+                    status: 'fail',
+                    message: 'Bill not found'
+                });
+            }
+
+            // Update bill status to completed
+            bill.status = 'completed';
+            bill.paidAt = new Date();
+            
+            // Set totalPriceAfterDiscount if not already set
+            if (!bill.totalPriceAfterDiscount) {
+                bill.totalPriceAfterDiscount = bill.totalPrice;
+            }
+            
+            // Update all booking statuses
+            for (const item of bill.items) {
+                const BookingModel = bookingModels[item.bookingType];
+                if (BookingModel) {
+                    const booking = await BookingModel.findById(item.bookingId);
+                    if (booking) {
+                        // Update payment status to paid
+                        if (booking.paymentStatus) {
+                            booking.paymentStatus = 'paid';
+                        }
+                        
+                        // Update booking status based on type
+                        switch (item.bookingType) {
+                            case 'FlightTicket':
+                                booking.status = 'active';
+                                break;
+                            case 'CarBooking':
+                                booking.status = 'confirmed';
+                                break;
+                            case 'HotelBooking':
+                                booking.status = 'active';
+                                break;
+                            case 'TrainTripBooking':
+                                booking.status = 'active';
+                                break;
+                        }
+                        await booking.save();
+                        console.log(`Updated ${item.bookingType} booking:`, item.bookingId);
+                    }
+                }
+            }
+
+            await bill.save();
+            
+            console.log('Payment completed successfully for bill:', billId);
+            
+            return res.json({
+                status: 'success',
+                message: 'Payment processed successfully'
+            });
+        } catch (error) {
+            console.error('Error processing payment for bill:', billId, error);
+            return res.status(500).json({
                 status: 'fail',
-                message: 'Bill not found'
+                message: 'Error processing payment'
             });
         }
-        console.log(bill);
+    }
+    
+    // Handle payment failure
+    if(type === 'checkout.session.expired' || type === 'payment_intent.payment_failed') {
+        console.log('Payment failed for event:', type);
+        return res.json({
+            status: 'success',
+            message: 'Payment failure handled'
+        });
     }
 
-})
+    // Return success for other event types
+    return res.json({
+        status: 'success',
+        message: 'Webhook received'
+    });
+});

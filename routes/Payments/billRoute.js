@@ -28,6 +28,5 @@ router.get('/test-stripe', async (req, res) => {
     }
 });
 
-router.post('/webhook', billServices.createWebhook);
 
 module.exports = router;
