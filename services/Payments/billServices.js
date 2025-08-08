@@ -6,6 +6,8 @@ const FlightTicket = require('../../models/flightTicketModel');
 const CarBooking = require('../../models/Cars/carBookingModel');
 const HotelBooking = require('../../models/Hotels/hotelBookingModel');
 const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
+const Coupon = require('../../models/Payments/couponModel');
+
 // Initialize Stripe with error handling for missing API key
 let stripe;
 if (process.env.STRIPE_SECRET_KEY) {
@@ -226,6 +228,15 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
 
     const totalPrice = bill.totalPrice;
 
+    const couponId = req.params.coupon;
+    const coupon = await Coupon.findById(couponId);
+    if(coupon && coupon.discount){
+        totalPrice = totalPrice - (totalPrice * (coupon.discount/ 100))
+        bill.totalPriceAfterDiscount = totalPrice;
+        bill.save();
+    }
+        
+    
     const session = await stripe.checkout.sessions.create({
         line_items: [{
             price_data: {
@@ -233,7 +244,7 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
                 product_data: {
                     name: user.firstName + ' ' + user.lastName,
                 },
-                unit_amount: totalPrice * 100,
+                unit_amount: totalPrice,
             },
             quantity: 1,
          }],
@@ -243,8 +254,7 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
         customer_email: user.email,
         client_reference_id: billId,
         metadata: {
-            billId,
-            totalPrice
+            billId
         }
     })
 
@@ -258,7 +268,7 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
 })
 
 // @desc Webhook for stripe
-// @route POST /api/payments/bill/webhook
+// @route POST /webhook-checkout
 // @access Public (Stripe webhook)
 exports.createWebhook = asyncHandler(async(req, res, next) => {
     const sig = req.headers['stripe-signature'];
@@ -279,22 +289,12 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
     }
 
     const {type, data} = event;
-    
-    console.log('Webhook event received:', type);
-    
+
+    const billId = session.metadata.billId;
     if(type === 'checkout.session.completed') {
         try {
             const session = data.object;
-            const billId = session.metadata.billId;
-            
-            if (!billId) {
-                console.error('No billId found in session metadata');
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'No billId found in session metadata'
-                });
-            }
-
+         
             const bill = await Bill.findById(billId);
             if(!bill) {
                 console.error('Bill not found:', billId);
@@ -307,7 +307,7 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
             // Update bill status to completed
             bill.status = 'completed';
             bill.paidAt = new Date();
-            
+
             // Set totalPriceAfterDiscount if not already set
             if (!bill.totalPriceAfterDiscount) {
                 bill.totalPriceAfterDiscount = bill.totalPrice;
@@ -320,41 +320,25 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
                     const booking = await BookingModel.findById(item.bookingId);
                     if (booking) {
                         // Update payment status to paid
-                        if (booking.paymentStatus) {
+                        if (booking.paymentStatus) 
                             booking.paymentStatus = 'paid';
-                        }
                         
                         // Update booking status based on type
-                        switch (item.bookingType) {
-                            case 'FlightTicket':
-                                booking.status = 'active';
-                                break;
-                            case 'CarBooking':
+                        if(item.bookingType ===  'CarBooking') 
                                 booking.status = 'confirmed';
-                                break;
-                            case 'HotelBooking':
-                                booking.status = 'active';
-                                break;
-                            case 'TrainTripBooking':
-                                booking.status = 'active';
-                                break;
-                        }
+                            
                         await booking.save();
-                        console.log(`Updated ${item.bookingType} booking:`, item.bookingId);
                     }
                 }
             }
 
             await bill.save();
-            
-            console.log('Payment completed successfully for bill:', billId);
-            
+                        
             return res.json({
                 status: 'success',
                 message: 'Payment processed successfully'
             });
         } catch (error) {
-            console.error('Error processing payment for bill:', billId, error);
             return res.status(500).json({
                 status: 'fail',
                 message: 'Error processing payment'

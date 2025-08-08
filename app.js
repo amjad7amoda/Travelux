@@ -53,7 +53,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Special middleware for Stripe webhooks to handle raw body - MUST come before express.json()
 app.post(
-    '/api/payments/bill/webhook', 
+    '/webhook-checkout', 
     express.raw({ type: 'application/json' }), 
     billServices.createWebhook
 );
