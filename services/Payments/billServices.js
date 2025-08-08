@@ -6,7 +6,14 @@ const FlightTicket = require('../../models/flightTicketModel');
 const CarBooking = require('../../models/Cars/carBookingModel');
 const HotelBooking = require('../../models/Hotels/hotelBookingModel');
 const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
-
+// Initialize Stripe with error handling for missing API key
+let stripe;
+if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+} else {
+    console.warn('Warning: STRIPE_SECRET_KEY environment variable is not set. Stripe functionality will be disabled.');
+    stripe = null;
+}
 
 const bookingModels = {
     CarBooking,
@@ -97,7 +104,24 @@ exports.showBillDetails = asyncHandler(
     }
 )
 
+exports.showSpecificBill = asyncHandler(async(req, res, next) => {
+    const user = req.user;
+    const billId = req.params.billId;
+    const bill = await Bill.findById(billId);
 
+    if(!bill)
+        return next(new ApiError(`Bill not found`));
+    
+    if(!bill.user.equals(user._id))
+        return next(new ApiError(`You don't have permission to show this bill`));
+    
+    return res.json({
+        status: 'success',
+        data: {
+            bill
+        }
+    })
+})
 // @desc Delete a complete bill
 // @route DELTE /api/payments/bill/:id
 // @access Private(User)
@@ -176,3 +200,96 @@ async function populateBookingDetails(item) {
             break;
     }
 }
+
+// @desc Create a checkout session
+// @route POST /api/payments/bill/checkout-session/billId
+// @access Private(User)
+exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
+    // Check if Stripe is properly configured
+    if (!stripe) {
+        return res.status(500).json({
+            status: 'fail',
+            message: 'Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.'
+        });
+    }
+
+    const user = req.user;
+    const billId = req.params.billId;
+    const bill = await Bill.findById(billId);
+
+    if (!bill) {
+        return res.status(404).json({
+            status: 'fail',
+            message: 'No bill found with that ID'
+        });
+    }
+
+    const totalPrice = bill.totalPrice;
+
+    const session = await stripe.checkout.sessions.create({
+        line_items: [{
+            price_data: {
+                currency: 'usd',
+                product_data: {
+                    name: user.firstName + ' ' + user.lastName,
+                },
+                unit_amount: totalPrice * 100,
+            },
+            quantity: 1,
+         }],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/payments/bill`,
+        cancel_url: `${req.protocol}://${req.get('host')}/payments/bill`,
+        customer_email: user.email,
+        client_reference_id: billId,
+        metadata: {
+            billId,
+            totalPrice
+        }
+    })
+
+    return res.json({
+        status: 'success',
+        data: {
+            message: 'Checkout session created successfully',
+            session
+        }
+    })
+})
+
+// @desc Webhook for stripe
+// @route POST /api/payments/bill/webhook
+// @access Private(User)
+exports.createWebhook = asyncHandler(async(req, res, next) => {
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(
+            req.body,
+            sig, 
+            process.env.STRIPE_WEBHOOK_SECRET
+        );
+    } catch (err) {
+        return res.status(400).json({
+            status: 'fail',
+            message: `Webhook verification failed: ${err.message}`
+        });
+    }
+
+
+    const {type, data} = event;
+    if(type === 'checkout.session.completed') {
+        const session = data.object;
+        const billId = session.metadata.billId;
+        const bill = await Bill.findById(billId);
+        if(!bill) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Bill not found'
+            });
+        }
+        console.log(bill);
+    }
+
+})
