@@ -1,5 +1,4 @@
 const asyncHandler = require('../../middlewares/asyncHandler');
-const apiError = require('../../middlewares/globalErrorHandler');
 const Bill = require('../../models/Payments/billModel');
 const ApiError = require('../../utils/apiError');
 const FlightTicket = require('../../models/flightTicketModel');
@@ -226,6 +225,9 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
         });
     }
 
+    if(bill.status = 'completed' && bill.paidAt){
+        return next(new ApiError(`This bill already paid At ${bill.paidAt}`))
+    }
     let totalPrice = bill.totalPrice;
 
     const couponCode = req.query.coupon;
@@ -236,7 +238,6 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
                 totalPrice = totalPrice - (totalPrice * (coupon.discount / 100));
                 bill.totalPriceAfterDiscount = Math.max(0, totalPrice); // Ensure non-negative
                 await bill.save();
-                console.log('Bill updated with discount:', bill);
             }
     }else{
         bill.totalPriceAfterDiscount = bill.totalPrice;
