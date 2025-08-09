@@ -1,10 +1,20 @@
 const { body } = require('express-validator');
 const validateMiddleware = require('../../../middlewares/validatorMiddleware');
+const Coupon = require('../../../models/Payments/couponModel')
+const ApiError = require('../../apiError');
 
 exports.createCouponValidator = [
     body('code')
       .notEmpty().withMessage('Coupon code is required').bail()
       .isString().withMessage('Coupon code must be a string').bail()
+      .custom(async (value) => {
+        const coupon = await Coupon.find({ code: value });
+        if(coupon){
+          throw new ApiError(`This coupon already exists`, 400)
+        }
+
+        return true
+      })
       .trim(),
   
     body('expiresAt')
@@ -14,7 +24,7 @@ exports.createCouponValidator = [
         const now = new Date();
         const enteredDate = new Date(value);
         if (enteredDate <= now) {
-          throw new Error('Coupon expiration date must be in the future');
+          throw new ApiError('Coupon expiration date must be in the future', 400);
         }
         return true;
       }),    

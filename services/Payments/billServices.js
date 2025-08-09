@@ -226,16 +226,24 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
         });
     }
 
-    const totalPrice = bill.totalPrice;
+    let totalPrice = bill.totalPrice;
 
-    const couponId = req.params.coupon;
-    const coupon = await Coupon.findById(couponId);
-    if(coupon && coupon.discount){
-        totalPrice = totalPrice - (totalPrice * (coupon.discount/ 100))
-        bill.totalPriceAfterDiscount = totalPrice;
-        bill.save();
+    const couponCode = req.query.coupon;
+    if (couponCode) {
+            const coupon = await Coupon.findOne({ code: couponCode });
+            if (coupon && coupon.discount && coupon.discount > 0) {
+                console.log('Applying coupon discount:', coupon.discount + '%');
+                totalPrice = totalPrice - (totalPrice * (coupon.discount / 100));
+                bill.totalPriceAfterDiscount = Math.max(0, totalPrice); // Ensure non-negative
+                await bill.save();
+                console.log('Bill updated with discount:', bill);
+            }
+    }else{
+        bill.totalPriceAfterDiscount = bill.totalPrice;
     }
         
+    // Save bill with updated totalPriceAfterDiscount
+    await bill.save();
     
     const session = await stripe.checkout.sessions.create({
         line_items: [{
@@ -244,7 +252,7 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
                 product_data: {
                     name: user.firstName + ' ' + user.lastName,
                 },
-                unit_amount: totalPrice,
+                unit_amount: Math.round(totalPrice * 100),
             },
             quantity: 1,
          }],

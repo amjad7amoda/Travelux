@@ -19,7 +19,10 @@ const billSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    totalPriceAfterDiscount: Number,
+    totalPriceAfterDiscount: {
+        type: Number,
+        default: 0
+    },
     user:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
