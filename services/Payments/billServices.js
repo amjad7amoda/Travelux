@@ -298,11 +298,10 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
 
     const {type, data} = event;
 
+    const session = data.object;
     const billId = session.metadata.billId;
     if(type === 'checkout.session.completed') {
         try {
-            const session = data.object;
-         
             const bill = await Bill.findById(billId);
             if(!bill) {
                 console.error('Bill not found:', billId);
