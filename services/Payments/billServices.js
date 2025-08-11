@@ -59,7 +59,12 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
         bookingType,
         bookingId
     });
-    bill.totalPrice = bill.totalPrice + item.totalPrice;
+    
+    if(bookingType === 'FlightTicket'){
+        bill.totalPrice = bill.totalPrice + item.finalPrice;
+    }else{
+        bill.totalPrice = bill.totalPrice + item.totalPrice;
+    }
     
     await bill.save();
 
