@@ -191,7 +191,7 @@ async function populateBookingDetails(item) {
                 }
             ]);
             break;
-        case 'HotelBooking':
+        case 'Booking':
             await item.bookingId.populate([
                 {
                     path: 'hotel',
