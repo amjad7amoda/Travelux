@@ -18,7 +18,7 @@ if (process.env.STRIPE_SECRET_KEY) {
 
 const bookingModels = {
     CarBooking,
-    HotelBooking,
+    Booking: HotelBooking,
     FlightTicket,
     TrainTripBooking
 };
