@@ -3,7 +3,7 @@ const Bill = require('../../models/Payments/billModel');
 const ApiError = require('../../utils/apiError');
 const FlightTicket = require('../../models/flightTicketModel');
 const CarBooking = require('../../models/Cars/carBookingModel');
-const HotelBooking = require('../../models/Hotels/hotelBookingModel');
+const Booking = require('../../models/Hotels/hotelBookingModel');
 const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
 const Coupon = require('../../models/Payments/couponModel');
 
@@ -18,7 +18,7 @@ if (process.env.STRIPE_SECRET_KEY) {
 
 const bookingModels = {
     CarBooking,
-    Booking: HotelBooking,
+    Booking,
     FlightTicket,
     TrainTripBooking
 };
@@ -92,13 +92,14 @@ exports.showBillDetails = asyncHandler(
         // First populate the bookingId using refPath
         await bill.populate({
                 path: 'items.bookingId',
-                select: '-__v -user'
+                select: '-__v -user',
+                options: { skipUserPopulate: true }
         });
 
         // Then manually populate nested relations based on booking type
         for (let item of bill.items) 
             if(item.bookingId)
-                populateBookingDetails(item);
+                await populateBookingDetails(item);
         
 
         return res.json({
@@ -189,20 +190,20 @@ async function populateBookingDetails(item) {
             ]);
             break;
         case 'FlightTicket':
-            await item.bookingId.populate([
-                {
-                    path: 'flight',
-                    select: '-__v -user'
-                }
-            ]);
+            await item.bookingId.populate({
+                path: 'outboundFlight returnFlight',
+                select: '-airline -seatMap',
+                options: { skipAirlinePopulate: true }
+            })
             break;
         case 'Booking':
-            await item.bookingId.populate([
-                {
+            await item.bookingId.populate([{
                     path: 'hotel',
-                    select: '-__v -user'
-                }
-            ]);
+                    select: 'name slug location country city starts'
+                }, {
+                    path: 'room',
+                    select: 'roomType roomNumber capacity pricePerNight '
+                }]);
             break;
     }
 }
