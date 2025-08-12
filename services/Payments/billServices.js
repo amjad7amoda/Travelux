@@ -245,17 +245,18 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
         });
     }
 
-    if(bill.status = 'completed' && bill.paidAt){
+    if(bill.status == 'completed' && bill.paidAt){
         return next(new ApiError(`This bill already paid At ${bill.paidAt}`))
     }
 
     //Update Total Price After Discount
-    let totalPrice = bill.totalPrice;
-    if(bill.totalPriceAfterDiscount = 0)
+    let totalPrice = bill.totalPriceAfterDiscount > 0
+    ? bill.totalPriceAfterDiscount
+    : bill.totalPrice;
+    if(bill.totalPriceAfterDiscount === 0){
         bill.totalPriceAfterDiscount = totalPrice;
-    else
-        totalPrice = bill.totalPriceAfterDiscount;
-    await bill.save();
+        await bill.save();
+    }
     
     const session = await stripe.checkout.sessions.create({
         line_items: [{
