@@ -3,12 +3,15 @@ const Car = require('../../models/Cars/carModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const factory = require('../handlersFactory');
 const mongoose = require('mongoose');
-const Bill = require('../../models/Payments/billModel')
+const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../notificationService');
 
 // @route   POST /api/cars/bookings
 // @desc    Create a new car booking
 // @access  Public
 exports.createBooking = asyncHandler(async (req, res) => {
+  const user = req.user;
+
   //Check if car exists
   const car = await Car.findById(req.body.car);
   if (!car) {
@@ -49,6 +52,7 @@ exports.createBooking = asyncHandler(async (req, res) => {
 
   // Populate car and user before sending response
   await booking.populate(['car']);
+  createNotification(user._id, 'Rental A Car', `You have rentaled ${car.brand}-${car.model}-${car.year} for ${diffDays} days`, 'car')
   res.status(201).json({ status: 'success', message: 'Booking created successfully', data: { booking } });
 });
 
@@ -79,6 +83,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     const conflict = await CarBooking.findOne({
         car: booking.car,
         _id: { $ne: booking._id },
+        status: { $ne: 'cancelled'},
         $or: [
         { startDate: { $lt: endDate }, endDate: { $gt: startDate } }
         ]
@@ -124,6 +129,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     }
 
     await booking.populate(['car']);
+    createNotification(user._id, 'Update Car Rental', `You Car Rental Updated Successfully And Set To ${diffDays} days`);
     res.json({ status: 'success', message: 'Booking updated successfully', data: { booking } });
 });
 
@@ -174,6 +180,7 @@ exports.cancelBooking = asyncHandler(async (req, res) => {
   }
 
   await booking.populate(['car']);
+  createNotification(user._id, 'Cancle A Car Rental', 'Your Car Rental Canclelled Successfully', 'car')
   res.json({ status: 'success', message: 'Booking cancelled successfully' });
 });
 
