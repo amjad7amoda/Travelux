@@ -5,8 +5,8 @@ const ApiError = require('../../utils/apiError');
 const TrainTrip = require('../../models/Trains/trainTripModel');
 const Train = require('../../models/Trains/trainModel');
 const { formatMinutesToHHMM } = require('../../utils/calculate');
-const Bill = require('../../models/Payments/billModel')
-
+const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../../services/notificationService');
 // @desc Get train booking for a user
 // @route GET /api/train-trip-bookings/
 // @access Public (for user)
@@ -97,6 +97,8 @@ exports.bookTrainTrip = asyncHandler( async(req, res, next) => {
         select: 'name country city code'
     }]);
 
+    createNotification(user._id, 'Book A Train Trip', `You have booked a train trip from ${startCity} to ${endCity}`, 'train')
+
     return res.json({
         status: 'sucess',
         data: {
@@ -148,6 +150,7 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
 
         await trainTripBooking.deleteOne();
         await trainTrip.save();
+        createNotification(user._id, 'Cancel A Train Trip Booking', 'Your booking cancelled successfully')
         return res.json({ status: 'success', message: 'Your booking has been cancelled.' });
     }else{
         trainTrip.status = status;
@@ -191,6 +194,8 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
     }
 
     await trainTrip.save();
+
+    createNotification(user._id, 'Update Train Trip Book', `Your Booking updated successfully`, 'train')
     res.json({ success: true, trainTripBooking });
 });
 

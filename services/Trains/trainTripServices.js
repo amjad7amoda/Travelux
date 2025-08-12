@@ -8,7 +8,6 @@ const asyncHandler = require('../../middlewares/asyncHandler');
 const ApiFeatures = require('../../utils/apiFeatures');
 const ApiError = require('../../utils/apiError');
 const { calculateDistance, calculateDuration, formatMinutesToHHMM } = require('../../utils/calculate');
-
 // @desc Get all train trips and you can search 'city=city1,city2'
 // @route GET '/api/train-trips'
 // @access Public
@@ -31,7 +30,7 @@ exports.getAllTrainTrips = asyncHandler(async (req, res, next) => {
         targetDate.setHours(0, 0, 0, 0);
     }
 
-    const allTrips = await TrainTrip.find({})
+    const allTrips = await TrainTrip.find({ status: { $in : ['preparing', 'onWay']}})
         .populate({
             path: 'stations.station'
         }).lean();
@@ -172,6 +171,8 @@ exports.createTrainTrip = asyncHandler( async(req, res, next) => {
 // @route PUT '/api/train-trips/:id'
 // @access Private (admin, routeManager)
 exports.updateTrainTrip = asyncHandler(async (req, res, next) => {
+    const user = req.user;
+
     const trainTrip = await TrainTrip.findById(req.params.id);
     if (!trainTrip)
         return next(new ApiError('This train trip is not found', 400));

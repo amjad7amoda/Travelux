@@ -6,6 +6,7 @@ const CarBooking = require('../../models/Cars/carBookingModel');
 const Booking = require('../../models/Hotels/hotelBookingModel');
 const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
 const Coupon = require('../../models/Payments/couponModel');
+const { createNotification } = require('../../services/notificationService')
 
 // Initialize Stripe with error handling for missing API key
 let stripe;
@@ -369,6 +370,7 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
         });
     }
 
+    createNotification(bill.user, 'Payment Completed', `Your Bill has been paid with total price ${bill.totalPriceAfterDiscount}`)
     // Return success for other event types
     return res.json({
         status: 'success',
