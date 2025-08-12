@@ -335,7 +335,9 @@ exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
 
 exports.createBookingNotification = asyncHandler(async (req, res, next) => {
     const user = req.user;
-    const notification = await createNotification(user._id, 'Hotel Booking', `You have booked a room in ${req.body.hotel.name}`, 'hotel');
+    const room = await Room.findById(req.body.room);
+    const hotel = await Hotel.findById(room.hotel);
+    const notification = await createNotification(user._id, 'Hotel Booking', `You have booked a room in ${hotel.name}`, 'hotel');
     next();
 });
 
