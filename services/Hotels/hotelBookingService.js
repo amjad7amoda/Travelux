@@ -5,6 +5,9 @@ const ApiError = require('../../utils/apiError');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const ApiFeatures = require('../../utils/apiFeatures');
 const Hotel = require('../../models/Hotels/hotelModel');
+const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../notificationService');
+
 
 // @desc Create a hotel booking
 // @route POST /api/v1/hotelBookings
@@ -127,7 +130,7 @@ exports.getAllHotelBookingsForCurrentManager = asyncHandler(async (req, res, nex
     }
 
     if (!bookings || bookings.length === 0)
-        return next(new ApiError(`there is no bookings for this manager`, 404));
+        return res.status(200).json({ status: 'SUCCESS', data: [] });
 
     res.status(200).json({
         status: "SUCCESS",
@@ -294,3 +297,68 @@ exports.handleNoRoomChange = asyncHandler(async (req, res, next) => {
     next();
 });
 
+exports.changeBillValues = (async (req, res, next) => {
+    const bookingId = req.params.id;
+    const booking = await HotelBooking.findById(bookingId);
+    const oldTotalPrice = booking.totalPrice;
+    const room = await Room.findById(booking.room);
+    const hotel = await Hotel.findById(booking.hotel);
+
+    const bill = await Bill.findOne({ user: booking.user, status: 'continous' });
+    if (bill) {
+        const bookingItem = bill.items.find(item => item.bookingId.toString() === bookingId.toString());
+        if (bookingItem) {
+            console.log("req.body.totalPrice", req.body.totalPrice);
+            console.log("bookingItem.price", bookingItem.price);
+            console.log("bill.totalPrice", bill.totalPrice);
+            bill.totalPrice = bill.totalPrice - oldTotalPrice + req.body.totalPrice; // update the bill total price
+            await bill.save();
+        }
+    }
+    console.log("Bill values changed successfully", bill);
+    next();
+});
+
+exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
+    console.log("changeBillValuesForCanceledBooking");
+    const bookingId = req.params.id;
+    const booking = await HotelBooking.findById(bookingId);
+    if (!booking) { 
+        throw new ApiError("Booking not found", 400);
+    }
+    const oldTotalPrice = booking.totalPrice;
+    const bill = await Bill.findOne({ user: booking.user, status: 'continous' });
+    if (bill) {
+        console.log("Bill found", bill);
+        const bookingItem = bill.items.find(item => item.bookingId.toString() === bookingId.toString());
+        if (bookingItem) {
+            bill.totalPrice -= oldTotalPrice; // update the bill total price
+            await bill.save();
+        }
+    }
+    console.log("Bill values changed successfully", bill);
+    next();
+});
+
+exports.createBookingNotification = asyncHandler(async (req, res, next) => {
+    const bookingId = req.params.id;
+    const booking = await HotelBooking.findById(bookingId);
+    const user = booking.user;
+    const notification = await createNotification(user._id, 'Hotel Booking', `You have booked a room in ${booking.hotel.name}`, 'hotel');
+});
+
+exports.updateBookingNotification = asyncHandler(async (req, res, next) => {
+    const bookingId = req.params.id;
+    const booking = await HotelBooking.findById(bookingId);
+    const user = booking.user;
+    const notification = await createNotification(user._id, 'Hotel Booking', `You have updated your booking in ${booking.hotel.name}`, 'hotel');
+    next();
+});
+
+exports.deleteBookingNotification = asyncHandler(async (req, res, next) => {
+    const bookingId = req.params.id;
+    const booking = await HotelBooking.findById(bookingId);
+    const user = booking.user;
+    const notification = await createNotification(user._id, 'Hotel Booking', `You have canceled your booking in ${booking.hotel.name}`, 'hotel');
+    next();
+});

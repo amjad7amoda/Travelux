@@ -19,6 +19,11 @@ const { createHotelBooking,
     checkOwnership,
     handleRoomChange,
     getAllHotelBookingsForCurrentManager,
+    changeBillValues,
+    changeBillValuesForCanceledBooking,
+    createBookingNotification,
+    updateBookingNotification,
+    deleteBookingNotification,
 } = require('../../services/Hotels/hotelBookingService');
 
 const { createHotelBookingValidator,
@@ -33,6 +38,7 @@ router.route('/')
         setUserIdToBody,
         createHotelBookingValidator,
         markRoomAsNotAvailable,
+        createBookingNotification,
         createHotelBooking,
         bookingIdValidator
     )
@@ -55,7 +61,15 @@ router.route('/:id')
         updateHotelBookingValidator,
         handleRoomChange, // if room is provided, change the room to the new room and mark the old room as available
         setTotalBookingPrice,
-        updateHotelBooking)
-    .delete(authService.protect, authService.allowTo('user'), deleteHotelBookingValidator, markRoomAsAvailable, deleteHotelBooking);
+        changeBillValues,
+        updateBookingNotification,
+        updateHotelBooking
+    )
+    .delete(authService.protect, authService.allowTo('user'),
+        deleteHotelBookingValidator,
+        markRoomAsAvailable,
+        changeBillValuesForCanceledBooking,
+        deleteBookingNotification,
+        deleteHotelBooking);
 
 module.exports = router;
