@@ -348,7 +348,7 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
             }
 
             await bill.save();
-                        
+            createNotification(bill.user, 'Payment Completed', `Your Bill has been paid with total price ${bill.totalPriceAfterDiscount}`, 'payment')
             return res.json({
                 status: 'success',
                 message: 'Payment processed successfully'
@@ -369,8 +369,6 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
             message: 'Payment failure handled'
         });
     }
-
-    createNotification(bill.user, 'Payment Completed', `Your Bill has been paid with total price ${bill.totalPriceAfterDiscount}`)
     // Return success for other event types
     return res.json({
         status: 'success',
