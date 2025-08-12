@@ -102,6 +102,19 @@ exports.showBillDetails = asyncHandler(
             if(item.bookingId)
                 await populateBookingDetails(item);
         
+            //Applyinh Coupon Code If Exists
+            const couponCode = req.query.coupon;
+            if (couponCode) {
+                const coupon = await Coupon.findOne({ code: couponCode });
+                if(!coupon)
+                    console.error(`Can't find this coupon ${couponCode}`)
+                if (coupon && coupon.discount && coupon.discount > 0) {
+                    let totalPrice = bill.totalPrice;
+                    totalPrice = totalPrice - (totalPrice * (coupon.discount / 100));
+                    bill.totalPriceAfterDiscount = Math.max(0, totalPrice);
+                    await bill.save();
+                }
+        }
 
         return res.json({
             status: 'success',
@@ -235,22 +248,13 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
     if(bill.status = 'completed' && bill.paidAt){
         return next(new ApiError(`This bill already paid At ${bill.paidAt}`))
     }
-    let totalPrice = bill.totalPrice;
 
-    const couponCode = req.query.coupon;
-    if (couponCode) {
-            const coupon = await Coupon.findOne({ code: couponCode });
-            if (coupon && coupon.discount && coupon.discount > 0) {
-                console.log('Applying coupon discount:', coupon.discount + '%');
-                totalPrice = totalPrice - (totalPrice * (coupon.discount / 100));
-                bill.totalPriceAfterDiscount = Math.max(0, totalPrice); // Ensure non-negative
-                await bill.save();
-            }
-    }else{
-        bill.totalPriceAfterDiscount = bill.totalPrice;
-    }
-        
-    // Save bill with updated totalPriceAfterDiscount
+    //Update Total Price After Discount
+    let totalPrice = bill.totalPrice;
+    if(bill.totalPriceAfterDiscount = 0)
+        bill.totalPriceAfterDiscount = totalPrice;
+    else
+        totalPrice = bill.totalPriceAfterDiscount;
     await bill.save();
     
     const session = await stripe.checkout.sessions.create({
@@ -273,12 +277,11 @@ exports.createCheckoutSession = asyncHandler(async(req, res, next) => {
             billId
         }
     })
-
     return res.json({
         status: 'success',
         data: {
             message: 'Checkout session created successfully',
-            session
+            sessionURL: session.url
         }
     })
 })
@@ -348,7 +351,7 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
             }
 
             await bill.save();
-            createNotification(bill.user, 'Payment Completed', `Your Bill has been paid with total price ${bill.totalPriceAfterDiscount}`, 'payment')
+            createNotification(bill.user, 'Payment Completed', `Your Bill Paid Successfully With Total Price $${bill.totalPriceAfterDiscount}`, 'payment')
             return res.json({
                 status: 'success',
                 message: 'Payment processed successfully'
