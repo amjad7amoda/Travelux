@@ -18,6 +18,7 @@ const { createHotelBooking,
     setHotelIdToBody,
     checkOwnership,
     handleRoomChange,
+    getAllHotelBookingsForCurrentManager,
 } = require('../../services/Hotels/hotelBookingService');
 
 const { createHotelBookingValidator,
@@ -35,7 +36,10 @@ router.route('/')
         createHotelBooking,
         bookingIdValidator
     )
-    .get(authService.protect, authService.allowTo('hotelManager'), getAllHotelBookings);
+    .get(authService.protect, authService.allowTo('admin'), getAllHotelBookings);
+
+router.route('/manager')
+    .get(authService.protect, authService.allowTo('hotelManager'), getAllHotelBookingsForCurrentManager);
 
 router.route('/user')
     .get(authService.protect, authService.allowTo('user'), getAllHotelBookingsForCurrentUser);

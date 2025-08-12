@@ -9,6 +9,7 @@ router.use('/:hotelId/rooms', roomRouter);
 const { createHotel,
     getAllHotels,
     getHotel,
+    getCurrentManagerHotels,
     updateHotel,
     deleteHotel,
     setHotelManager,
@@ -34,6 +35,12 @@ router
         createHotelValidator,
         createHotel)
     .get(getAllHotels);
+
+router
+    .route('/manager')
+    .get(authService.protect,
+        authService.allowTo('hotelManager'),
+        getCurrentManagerHotels);
 
 
 router

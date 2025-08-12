@@ -13,7 +13,7 @@ exports.createHotelBooking = factory.CreateOne(HotelBooking);
 
 // @desc Get all hotel bookings for all users
 // @route GET /api/v1/hotelBookings
-// @access Private/HotelManager
+// @access Private/Admin
 exports.getAllHotelBookings = asyncHandler(async (req, res, next) => {
     let filterObj = {};
     if (req.filteration) {
@@ -62,6 +62,72 @@ exports.getAllHotelBookings = asyncHandler(async (req, res, next) => {
 
     if (!bookings || bookings.length === 0)
         return next(new ApiError(`there is no bookings yet`, 404));
+
+    res.status(200).json({
+        status: "SUCCESS",
+        result: paginateResult,
+        data: { bookings: bookings }
+    });
+});
+
+// @desc Get all hotel bookings for a current manager
+// @route GET /api/v1/hotelBookings/manager
+// @access Private/HotelManager
+exports.getAllHotelBookingsForCurrentManager = asyncHandler(async (req, res, next) => {
+    let filterObj = {};
+    if (req.filteration) {
+        filterObj = req.filteration;
+    }
+
+    // Get all hotels owned by the current manager
+    const managerHotels = await Hotel.find({ hotelManager: req.user._id }).select('_id');
+    const managerHotelIds = managerHotels.map(hotel => hotel._id);
+
+    // Add filter to only get bookings for hotels owned by the manager
+    filterObj.hotel = { $in: managerHotelIds };
+
+    const countDocs = await HotelBooking.countDocuments(filterObj);
+
+    const apiFeatures = new ApiFeatures(
+        HotelBooking.find(filterObj),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate(countDocs)
+        .buildQuery();
+
+    const { paginateResult, mongooseQuery } = apiFeatures;
+    let bookings = await mongooseQuery
+        .populate('user', 'firstName lastName email avatar')
+        .populate('hotel', 'name')
+        .populate('room', 'roomNumber roomType');
+
+    // Custom search for hotel name, room, and user if keyWord is provided
+    if (req.query.keyWord) {
+        const keyword = req.query.keyWord.replace(/^keyWord:/, '').trim().toLowerCase();
+        bookings = bookings.filter(booking => {
+            const hotelMatch = booking.hotel && booking.hotel.name && booking.hotel.name.toLowerCase().includes(keyword);
+            const roomNumberMatch = booking.room && booking.room.roomNumber && booking.room.roomNumber.toString().toLowerCase().includes(keyword);
+            const roomTypeMatch = booking.room && booking.room.roomType && booking.room.roomType.toLowerCase().includes(keyword);
+            const userFirstNameMatch = booking.user && booking.user.firstName && booking.user.firstName.toLowerCase().includes(keyword);
+            const userLastNameMatch = booking.user && booking.user.lastName && booking.user.lastName.toLowerCase().includes(keyword);
+            return hotelMatch || roomNumberMatch || roomTypeMatch || userFirstNameMatch || userLastNameMatch;
+        });
+        // Update pagination result if filtered
+        if (bookings.length < paginateResult.limit) {
+            paginateResult.currentPage = 1;
+            paginateResult.numOfPages = 1;
+            paginateResult.hasPreviousPage = false;
+            paginateResult.hasNextPage = false;
+            delete paginateResult.next;
+            delete paginateResult.prev;
+        }
+    }
+
+    if (!bookings || bookings.length === 0)
+        return next(new ApiError(`there is no bookings for this manager`, 404));
 
     res.status(200).json({
         status: "SUCCESS",
