@@ -308,19 +308,14 @@ exports.changeBillValues = (async (req, res, next) => {
     if (bill) {
         const bookingItem = bill.items.find(item => item.bookingId.toString() === bookingId.toString());
         if (bookingItem) {
-            console.log("req.body.totalPrice", req.body.totalPrice);
-            console.log("bookingItem.price", bookingItem.price);
-            console.log("bill.totalPrice", bill.totalPrice);
             bill.totalPrice = bill.totalPrice - oldTotalPrice + req.body.totalPrice; // update the bill total price
             await bill.save();
         }
     }
-    console.log("Bill values changed successfully", bill);
     next();
 });
 
 exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
-    console.log("changeBillValuesForCanceledBooking");
     const bookingId = req.params.id;
     const booking = await HotelBooking.findById(bookingId);
     if (!booking) { 
@@ -329,22 +324,19 @@ exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
     const oldTotalPrice = booking.totalPrice;
     const bill = await Bill.findOne({ user: booking.user, status: 'continous' });
     if (bill) {
-        console.log("Bill found", bill);
         const bookingItem = bill.items.find(item => item.bookingId.toString() === bookingId.toString());
         if (bookingItem) {
             bill.totalPrice -= oldTotalPrice; // update the bill total price
             await bill.save();
         }
     }
-    console.log("Bill values changed successfully", bill);
     next();
 });
 
 exports.createBookingNotification = asyncHandler(async (req, res, next) => {
-    const bookingId = req.params.id;
-    const booking = await HotelBooking.findById(bookingId);
-    const user = booking.user;
-    const notification = await createNotification(user._id, 'Hotel Booking', `You have booked a room in ${booking.hotel.name}`, 'hotel');
+    const user = req.user;
+    const notification = await createNotification(user._id, 'Hotel Booking', `You have booked a room in ${req.body.hotel.name}`, 'hotel');
+    next();
 });
 
 exports.updateBookingNotification = asyncHandler(async (req, res, next) => {
