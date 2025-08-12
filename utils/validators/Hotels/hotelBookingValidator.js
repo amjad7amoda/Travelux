@@ -38,14 +38,43 @@ exports.createHotelBookingValidator = [
         .custom(async (val, { req }) => {
             const room = await Room.findById(val);
             if (!room) {
-                throw new Error('Room not found');
+                throw new Error('Room is not found');
             }
             if (room.hotel.toString() !== req.body.hotel.toString()) {
                 throw new Error('Room is not in the hotel');
             }
-            if (!room.isAvailable) {
-                throw new Error('Room is not available');
+
+            // Check for date conflicts with existing bookings
+            const checkInDate = new Date(req.body.checkInDate);
+            const checkOutDate = new Date(req.body.checkOutDate);
+
+            // Find existing bookings for this room that overlap with the requested dates
+            const conflictingBookings = await HotelBooking.find({
+                room: val,
+                status: { $in: ['active'] }, // Only check active bookings
+                $or: [
+                    // New booking starts during an existing booking
+                    {
+                        checkInDate: { $lte: checkInDate },
+                        checkOutDate: { $gt: checkInDate }
+                    },
+                    // New booking ends during an existing booking
+                    {
+                        checkInDate: { $lt: checkOutDate },
+                        checkOutDate: { $gte: checkOutDate }
+                    },
+                    // New booking completely contains an existing booking
+                    {
+                        checkInDate: { $gte: checkInDate },
+                        checkOutDate: { $lte: checkOutDate }
+                    }
+                ]
+            });
+
+            if (conflictingBookings.length > 0) {
+                throw new Error('Room is not available for the selected dates due to existing bookings');
             }
+
             return true;
         }),
     check('checkInDate').notEmpty().withMessage('Check in date is required')
@@ -114,16 +143,47 @@ exports.updateHotelBookingValidator = [
         .custom(async (val, { req }) => {
             const room = await Room.findById(val);
             if (!room) {
-                throw new Error('Room not found');
+                throw new Error('Room is not found');
             }
             if (room.hotel.toString() !== req.body.hotel.toString()) {
                 throw new Error('Room is not in the hotel');
             }
+
+            // If changing to a different room, check for date conflicts
             if (room.id.toString() !== req.body.room.toString()) {
-                if (!room.isAvailable) {
-                    throw new Error('Room is not available');
+                // Check for date conflicts with existing bookings
+                const checkInDate = new Date(req.body.checkInDate);
+                const checkOutDate = new Date(req.body.checkOutDate);
+
+                // Find existing bookings for this room that overlap with the requested dates
+                const conflictingBookings = await HotelBooking.find({
+                    room: val,
+                    _id: { $ne: req.params.id }, // Exclude current booking from conflict check
+                    status: { $in: ['active'] }, // Only check active bookings
+                    $or: [
+                        // New booking starts during an existing booking
+                        {
+                            checkInDate: { $lte: checkInDate },
+                            checkOutDate: { $gt: checkInDate }
+                        },
+                        // New booking ends during an existing booking
+                        {
+                            checkInDate: { $lt: checkOutDate },
+                            checkOutDate: { $gte: checkOutDate }
+                        },
+                        // New booking completely contains an existing booking
+                        {
+                            checkInDate: { $gte: checkInDate },
+                            checkOutDate: { $lte: checkOutDate }
+                        }
+                    ]
+                });
+
+                if (conflictingBookings.length > 0) {
+                    throw new Error('Room is not available for the selected dates due to existing bookings');
                 }
             }
+
             return true;
         }),
     check('checkInDate').optional()
