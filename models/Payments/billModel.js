@@ -19,6 +19,10 @@ const billSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    coupons: {
+        type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' }],
+        default: []
+    }, 
     totalPriceAfterDiscount: {
         type: Number,
         default: 0

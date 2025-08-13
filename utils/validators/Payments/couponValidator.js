@@ -8,7 +8,7 @@ exports.createCouponValidator = [
       .notEmpty().withMessage('Coupon code is required').bail()
       .isString().withMessage('Coupon code must be a string').bail()
       .custom(async (value) => {
-        const coupon = await Coupon.find({ code: value });
+        const coupon = await Coupon.findOne({ code: value });
         if(coupon){
           throw new ApiError(`This coupon already exists`, 400)
         }

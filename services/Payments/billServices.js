@@ -102,19 +102,42 @@ exports.showBillDetails = asyncHandler(
             if(item.bookingId)
                 await populateBookingDetails(item);
         
-            //Applyinh Coupon Code If Exists
-            const couponCode = req.query.coupon;
-            if (couponCode) {
-                const coupon = await Coupon.findOne({ code: couponCode });
-                if(!coupon)
-                    console.error(`Can't find this coupon ${couponCode}`)
-                if (coupon && coupon.discount && coupon.discount > 0) {
-                    let totalPrice = bill.totalPrice;
-                    totalPrice = totalPrice - (totalPrice * (coupon.discount / 100));
-                    bill.totalPriceAfterDiscount = Math.max(0, totalPrice);
-                    await bill.save();
-                }
+        //Coupons Check and change totalPriceAfterDiscount
+        const billCoupons = bill.coupons;   
+        const newCouponCode = req.query.coupon;
+        
+        if(newCouponCode){
+            const newCoupon = await Coupon.findOne({ code: newCouponCode, expiresAt: { $gt: new Date() }});
+            if(!newCoupon){
+                return next(new ApiError(`Can't find ${newCouponCode} code or it's expired`, 400));
+            }
+            const exists = billCoupons.some(couponId => couponId.toString() === newCoupon._id.toString());
+            if(!exists){
+                bill.coupons.push(newCoupon._id);
+                await bill.save();
+            }
         }
+        
+        const appliedCoupons = await Coupon.find({
+            _id: { $in: bill.coupons },
+            expiresAt: { $gt: new Date() }
+        });
+        
+        if(appliedCoupons.length > 0){
+            let totalDiscountPercent = 0;
+            appliedCoupons.forEach(coupon => {
+                totalDiscountPercent += coupon.discount;
+            });
+            if (totalDiscountPercent > 100) totalDiscountPercent = 100;
+        
+            bill.totalPriceAfterDiscount = bill.totalPrice * (1 - totalDiscountPercent / 100);
+            await bill.save();
+        }
+
+        await bill.populate({
+            path: 'coupons',
+            select: 'code discount expiresAt'
+        })
 
         return res.json({
             status: 'success',
@@ -206,7 +229,7 @@ async function populateBookingDetails(item) {
         case 'FlightTicket':
             await item.bookingId.populate({
                 path: 'outboundFlight returnFlight',
-                select: '-airline -seatMap',
+                select: '-airline',
                 options: { skipAirlinePopulate: true }
             })
             break;
