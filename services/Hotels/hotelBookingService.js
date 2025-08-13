@@ -130,7 +130,9 @@ exports.getAllHotelBookingsForCurrentManager = asyncHandler(async (req, res, nex
     }
 
     if (!bookings || bookings.length === 0)
-        return res.status(200).json({ status: 'SUCCESS', data: [] });
+        return res.status(200).json({
+            status: 'SUCCESS', data: { bookings: [] }
+        });
 
     res.status(200).json({
         status: "SUCCESS",
@@ -318,7 +320,7 @@ exports.changeBillValues = (async (req, res, next) => {
 exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
     const bookingId = req.params.id;
     const booking = await HotelBooking.findById(bookingId);
-    if (!booking) { 
+    if (!booking) {
         throw new ApiError("Booking not found", 400);
     }
     const oldTotalPrice = booking.totalPrice;
@@ -327,6 +329,7 @@ exports.changeBillValuesForCanceledBooking = (async (req, res, next) => {
         const bookingItem = bill.items.find(item => item.bookingId.toString() === bookingId.toString());
         if (bookingItem) {
             bill.totalPrice -= oldTotalPrice; // update the bill total price
+            bill.items = bill.items.filter(item => item.bookingId.toString() !== bookingId.toString());
             await bill.save();
         }
     }
