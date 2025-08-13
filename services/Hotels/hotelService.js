@@ -105,7 +105,18 @@ exports.getAllHotels = factory.GetAll(Hotel);
 // @desc Get specific hotel
 // @route GET /api/v1/hotels/:id
 // @access Public
-exports.getHotel = factory.GetOne(Hotel, { path: 'rooms', match: { isActive: true, isAvailable: true } });
+exports.getHotel = factory.GetOne(Hotel, { path: 'rooms', match: { isActive: true } });
+
+// @desc Get all hotels for the current manager
+// @route GET /api/hotels/manager
+// @access Private/Hotel Manager
+exports.getCurrentManagerHotels = asyncHandler(async (req, res, next) => {
+    const hotels = await Hotel.find({ hotelManager: req.user._id });
+    res.status(200).json({
+        status: 'SUCCESS',
+        data: hotels
+    });
+});
 
 // @desc Update specific hotel
 // @route PUT /api/v1/hotels/:id
