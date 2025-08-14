@@ -2,175 +2,218 @@
   "countries": [
     {
       "name": "Albania",
-      "code": "AL"
+      "code": "AL",
+      "cities": ["Tirana", "Durrës", "Vlorë", "Shkodër", "Elbasan"]
     },
     {
       "name": "Andorra",
-      "code": "AD"
+      "code": "AD",
+      "cities": ["Andorra la Vella", "Escaldes-Engordany", "Encamp", "Sant Julià de Lòria", "La Massana"]
     },
     {
       "name": "Austria",
-      "code": "AT"
+      "code": "AT",
+      "cities": ["Vienna", "Graz", "Linz", "Salzburg", "Innsbruck"]
     },
     {
       "name": "Belarus",
-      "code": "BY"
+      "code": "BY",
+      "cities": ["Minsk", "Gomel", "Mogilev", "Vitebsk", "Grodno"]
     },
     {
       "name": "Belgium",
-      "code": "BE"
+      "code": "BE",
+      "cities": ["Brussels", "Antwerp", "Ghent", "Charleroi", "Liège"]
     },
     {
       "name": "Bosnia and Herzegovina",
-      "code": "BA"
+      "code": "BA",
+      "cities": ["Sarajevo", "Banja Luka", "Tuzla", "Zenica", "Mostar"]
     },
     {
       "name": "Bulgaria",
-      "code": "BG"
+      "code": "BG",
+      "cities": ["Sofia", "Plovdiv", "Varna", "Burgas", "Ruse"]
     },
     {
       "name": "Croatia",
-      "code": "HR"
+      "code": "HR",
+      "cities": ["Zagreb", "Split", "Rijeka", "Osijek", "Zadar"]
     },
     {
       "name": "Czech Republic",
-      "code": "CZ"
+      "code": "CZ",
+      "cities": ["Prague", "Brno", "Ostrava", "Plzen", "Liberec"]
     },
     {
       "name": "Denmark",
-      "code": "DK"
+      "code": "DK",
+      "cities": ["Copenhagen", "Aarhus", "Odense", "Aalborg", "Esbjerg"]
     },
     {
       "name": "Estonia",
-      "code": "EE"
+      "code": "EE",
+      "cities": ["Tallinn", "Tartu", "Narva", "Pärnu", "Kohtla-Järve"]
     },
     {
       "name": "Finland",
-      "code": "FI"
+      "code": "FI",
+      "cities": ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu"]
     },
     {
       "name": "France",
-      "code": "FR"
+      "code": "FR",
+      "cities": ["Paris", "Marseille", "Lyon", "Toulouse", "Nice"]
     },
     {
       "name": "Germany",
-      "code": "DE"
+      "code": "DE",
+      "cities": ["Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt"]
     },
     {
       "name": "Greece",
-      "code": "GR"
+      "code": "GR",
+      "cities": ["Athens", "Thessaloniki", "Patras", "Piraeus", "Larissa"]
     },
     {
       "name": "Hungary",
-      "code": "HU"
+      "code": "HU",
+      "cities": ["Budapest", "Debrecen", "Szeged", "Miskolc", "Pécs"]
     },
     {
       "name": "Iceland",
-      "code": "IS"
+      "code": "IS",
+      "cities": ["Reykjavik", "Kópavogur", "Hafnarfjörður", "Akureyri", "Reykjanesbær"]
     },
     {
       "name": "Ireland",
-      "code": "IE"
+      "code": "IE",
+      "cities": ["Dublin", "Cork", "Limerick", "Galway", "Waterford"]
     },
     {
       "name": "Italy",
-      "code": "IT"
+      "code": "IT",
+      "cities": ["Rome", "Milan", "Naples", "Turin", "Palermo"]
     },
     {
       "name": "Latvia",
-      "code": "LV"
+      "code": "LV",
+      "cities": ["Riga", "Daugavpils", "Liepāja", "Jelgava", "Jūrmala"]
     },
     {
       "name": "Liechtenstein",
-      "code": "LI"
+      "code": "LI",
+      "cities": ["Vaduz", "Schaan", "Triesen", "Balzers", "Eschen"]
     },
     {
       "name": "Lithuania",
-      "code": "LT"
+      "code": "LT",
+      "cities": ["Vilnius", "Kaunas", "Klaipėda", "Šiauliai", "Panevėžys"]
     },
     {
       "name": "Luxembourg",
-      "code": "LU"
+      "code": "LU",
+      "cities": ["Luxembourg City", "Esch-sur-Alzette", "Differdange", "Dudelange", "Ettelbruck"]
     },
     {
       "name": "Malta",
-      "code": "MT"
+      "code": "MT",
+      "cities": ["Valletta", "Birkirkara", "Mosta", "Qormi", "Żabbar"]
     },
     {
       "name": "Moldova",
-      "code": "MD"
+      "code": "MD",
+      "cities": ["Chișinău", "Tiraspol", "Bălți", "Bender", "Rîbnița"]
     },
     {
       "name": "Monaco",
-      "code": "MC"
+      "code": "MC",
+      "cities": ["Monaco-Ville", "Monte Carlo", "La Condamine", "Fontvieille", "Moneghetti"]
     },
     {
       "name": "Montenegro",
-      "code": "ME"
+      "code": "ME",
+      "cities": ["Podgorica", "Nikšić", "Herceg Novi", "Bar", "Cetinje"]
     },
     {
       "name": "Netherlands",
-      "code": "NL"
+      "code": "NL",
+      "cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"]
     },
     {
       "name": "North Macedonia",
-      "code": "MK"
+      "code": "MK",
+      "cities": ["Skopje", "Bitola", "Kumanovo", "Prilep", "Tetovo"]
     },
     {
       "name": "Norway",
-      "code": "NO"
+      "code": "NO",
+      "cities": ["Oslo", "Bergen", "Trondheim", "Stavanger", "Drammen"]
     },
     {
       "name": "Poland",
-      "code": "PL"
+      "code": "PL",
+      "cities": ["Warsaw", "Kraków", "Łódź", "Wrocław", "Poznań"]
     },
     {
       "name": "Portugal",
-      "code": "PT"
+      "code": "PT",
+      "cities": ["Lisbon", "Porto", "Vila Nova de Gaia", "Amadora", "Braga"]
     },
     {
       "name": "Romania",
-      "code": "RO"
+      "code": "RO",
+      "cities": ["Bucharest", "Cluj-Napoca", "Timișoara", "Iași", "Constanța"]
     },
     {
       "name": "San Marino",
-      "code": "SM"
+      "code": "SM",
+      "cities": ["San Marino", "Serravalle", "Borgo Maggiore", "Domagnano", "Fiorentino"]
     },
     {
       "name": "Serbia",
-      "code": "RS"
+      "code": "RS",
+      "cities": ["Belgrade", "Novi Sad", "Niš", "Kragujevac", "Subotica"]
     },
     {
       "name": "Slovakia",
-      "code": "SK"
+      "code": "SK",
+      "cities": ["Bratislava", "Košice", "Prešov", "Žilina", "Nitra"]
     },
     {
       "name": "Slovenia",
-      "code": "SI"
+      "code": "SI",
+      "cities": ["Ljubljana", "Maribor", "Celje", "Kranj", "Velenje"]
     },
     {
       "name": "Spain",
-      "code": "ES"
+      "code": "ES",
+      "cities": ["Madrid", "Barcelona", "Valencia", "Seville", "Zaragoza"]
     },
     {
       "name": "Sweden",
-      "code": "SE"
+      "code": "SE",
+      "cities": ["Stockholm", "Gothenburg", "Malmö", "Uppsala", "Västerås"]
     },
     {
       "name": "Switzerland",
-      "code": "CH"
+      "code": "CH",
+      "cities": ["Zurich", "Geneva", "Basel", "Bern", "Lausanne"]
     },
     {
       "name": "Ukraine",
-      "code": "UA"
+      "code": "UA",
+      "cities": ["Kyiv", "Kharkiv", "Odesa", "Dnipro", "Donetsk"]
     },
     {
       "name": "United Kingdom",
-      "code": "GB"
+      "code": "GB",
+      "cities": ["London", "Birmingham", "Manchester", "Glasgow", "Liverpool"]
     },
     {
       "name": "Vatican City",
-      "code": "VA"
+      "code": "VA",
+      "cities": ["Vatican City"]
     }
   ]
 } 

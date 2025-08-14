@@ -31,7 +31,8 @@ const officeCarRoute = require('./routes/Cars/officeCarRoute');
 const carBookingRoute = require('./routes/Cars/carBookingRoute');
 const userFcmTokenRouter = require('./routes/userFcmTokenRoute');
 const myNotificationRouter = require('./routes/myNotificationRoute');
-
+const eventRouter = require('./routes/trips/eventRoute');
+const tripRouter = require('./routes/trips/tripRoute');
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
@@ -86,6 +87,8 @@ app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
 app.use('/api/mynotifications', myNotificationRouter);
+app.use('/api/events', eventRouter);
+app.use('/api/trips', tripRouter);
 
 //======== Setup the server ========//
 const port = process.env.PORT;
