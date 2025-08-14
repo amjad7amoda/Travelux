@@ -129,7 +129,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     }
 
     await booking.populate(['car']);
-    createNotification(user._id, 'Update Car Rental', `You Car Rental Updated Successfully And Set To ${diffDays} days`);
+    createNotification(user._id, 'Update Car Rental', `You Car Rental Updated Successfully And Set To ${diffDays} days`, 'car');
     res.json({ status: 'success', message: 'Booking updated successfully', data: { booking } });
 });
 

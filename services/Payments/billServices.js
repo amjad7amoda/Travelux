@@ -44,11 +44,11 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
     if(!bill)
         bill = await Bill.create({ user: user._id, status: 'continous' });
 
-    const item = await BookingModel.findById(bookingId);
+    const item = await BookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: 'paid' } });
     if(!item)
         return res.status(400).json({
             status: 'fail',
-            message: `This item is not found`
+            message: `This item is not found or it's paid for`
         });
 
     let billItems = bill.items
@@ -84,8 +84,21 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
 exports.showBillDetails = asyncHandler(
     async(req, res, next) => {
         const user = req.user;
-        const status = req.query.status || 'continous';
-        const bill = await Bill.findOne({ user: user._id, status: status });
+        const status = req.query.status
+        let bill;
+        if(status === 'completed'){
+            bill = await Bill.find({ user: user._id, status: 'completed'});
+
+            return res.json({
+                status: 'success',
+                data: {
+                    bill
+                }
+            })
+        }
+
+
+            bill = await Bill.findOne({ user: user._id, status: 'continous' });
 
         if(!bill)
             return next(new ApiError(`You don't have a bill`));

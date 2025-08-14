@@ -150,7 +150,7 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
 
         await trainTripBooking.deleteOne();
         await trainTrip.save();
-        createNotification(user._id, 'Cancel A Train Trip Booking', 'Your booking cancelled successfully')
+        createNotification(user._id, 'Cancel A Train Trip Booking', 'Your booking cancelled successfully', 'train')
         return res.json({ status: 'success', message: 'Your booking has been cancelled.' });
     }else{
         trainTrip.status = status;
