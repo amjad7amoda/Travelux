@@ -5,7 +5,8 @@ const ApiError = require('../../utils/apiError');
 const TrainTrip = require('../../models/Trains/trainTripModel');
 const Train = require('../../models/Trains/trainModel');
 const { formatMinutesToHHMM } = require('../../utils/calculate');
-
+const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../../services/notificationService');
 // @desc Get train booking for a user
 // @route GET /api/train-trip-bookings/
 // @access Public (for user)
@@ -96,6 +97,8 @@ exports.bookTrainTrip = asyncHandler( async(req, res, next) => {
         select: 'name country city code'
     }]);
 
+    createNotification(user._id, 'Book A Train Trip', `You have booked a train trip from ${startCity} to ${endCity}`, 'train')
+
     return res.json({
         status: 'sucess',
         data: {
@@ -122,12 +125,32 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
 
     let { status, addSeats, removeSeats } = req.body;
 
+    //Get Total Price Before Editing
+    const oldTotalPrice = trainTripBooking.totalPrice
 
     //Cancel booking
     if (status === 'cancelled') {
         trainTrip.availableSeats += trainTripBooking.numOfSeats;
+
+        const bill = await Bill.findOne({ user: user._id, status: 'continous' });
+        if (bill) {
+            const bookingItem = bill.items.find(item => 
+                item.bookingId.toString() === trainTripBooking._id.toString()
+            );
+            
+            if (bookingItem) {
+                bill.items = bill.items.filter(item => 
+                    item.bookingId.toString() !== trainTripBooking._id.toString()
+                );
+                
+                bill.totalPrice -= trainTripBooking.totalPrice;
+                await bill.save();
+            }
+        }
+
         await trainTripBooking.deleteOne();
-        trainTrip.save();
+        await trainTrip.save();
+        createNotification(user._id, 'Cancel A Train Trip Booking', 'Your booking cancelled successfully', 'train')
         return res.json({ status: 'success', message: 'Your booking has been cancelled.' });
     }else{
         trainTrip.status = status;
@@ -158,7 +181,21 @@ exports.updateBooking = asyncHandler(async (req, res, next) => {
         await trainTripBooking.save();
     }
 
+    const bill = await Bill.findOne({ user: user._id, status: 'continous' });
+    if (bill) {
+        const bookingItem = bill.items.find(item => 
+            item.bookingId.toString() === trainTripBooking._id.toString()
+        );
+        
+        if (bookingItem) {
+            bill.totalPrice = bill.totalPrice - oldTotalPrice + trainTripBooking.totalPrice;
+            await bill.save();
+        }
+    }
+
     await trainTrip.save();
+
+    createNotification(user._id, 'Update Train Trip Book', `Your Booking updated successfully`, 'train')
     res.json({ success: true, trainTripBooking });
 });
 

@@ -31,15 +31,15 @@ const officeCarRoute = require('./routes/Cars/officeCarRoute');
 const carBookingRoute = require('./routes/Cars/carBookingRoute');
 const userFcmTokenRouter = require('./routes/userFcmTokenRoute');
 const myNotificationRouter = require('./routes/myNotificationRoute');
-const eventRouter = require('./routes/trips/eventRoute');
-const tripRouter = require('./routes/trips/tripRoute');
+
 const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus');
 
 const couponRouter = require('./routes/Payments/couponRoute');
-const cartRouter = require('./routes/Payments/cartRoute');
+const billRouter = require('./routes/Payments/billRoute');
+
 
 //======== Config Requirement ========//
 env.config();
@@ -49,9 +49,20 @@ process.env.BASE_URL = `${process.env.PROTOCOL}://${process.env.HOST}:${process.
 app.use(express.static(path.join(__dirname, 'uploads')));
 
 //======== Middlewares =========//
-app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Special middleware for Stripe webhooks to handle raw body - MUST come before express.json()
+app.post(
+    '/webhook-checkout', 
+    express.raw({ type: 'application/json' }), 
+    billServices.createWebhook
+);
+
+// CORS middleware for all other routes
 app.use(cors());
+
+// Regular JSON middleware for all other routes
+app.use(express.json());
 
 //======== Jobs ===========//
 scheduleTrainStatusCheck();
@@ -87,8 +98,6 @@ app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
 app.use('/api/mynotifications', myNotificationRouter);
-app.use('/api/events', eventRouter);
-app.use('/api/trips', tripRouter);
 
 //======== Setup the server ========//
 const port = process.env.PORT;

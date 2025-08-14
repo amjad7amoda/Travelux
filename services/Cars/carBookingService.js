@@ -3,11 +3,15 @@ const Car = require('../../models/Cars/carModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const factory = require('../handlersFactory');
 const mongoose = require('mongoose');
+const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../notificationService');
 
 // @route   POST /api/cars/bookings
 // @desc    Create a new car booking
 // @access  Public
 exports.createBooking = asyncHandler(async (req, res) => {
+  const user = req.user;
+
   //Check if car exists
   const car = await Car.findById(req.body.car);
   if (!car) {
@@ -48,6 +52,7 @@ exports.createBooking = asyncHandler(async (req, res) => {
 
   // Populate car and user before sending response
   await booking.populate(['car']);
+  createNotification(user._id, 'Rental A Car', `You have rentaled ${car.brand}-${car.model}-${car.year} for ${diffDays} days`, 'car')
   res.status(201).json({ status: 'success', message: 'Booking created successfully', data: { booking } });
 });
 
@@ -55,6 +60,7 @@ exports.createBooking = asyncHandler(async (req, res) => {
 // @desc    Update a car booking (dates, status, paymentStatus, notes)
 // @access  Private (User)
 exports.updateBooking = asyncHandler(async (req, res) => {
+    const user = req.user;
     const { id } = req.params;
     const booking = await CarBooking.findById(id);
     if (!booking) {
@@ -77,6 +83,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     const conflict = await CarBooking.findOne({
         car: booking.car,
         _id: { $ne: booking._id },
+        status: { $ne: 'cancelled'},
         $or: [
         { startDate: { $lt: endDate }, endDate: { $gt: startDate } }
         ]
@@ -96,16 +103,33 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     booking.endDate = endDate;
 
     if (req.body.status) booking.status = req.body.status;
-    if (req.body.paymentStatus) booking.paymentStatus = req.body.paymentStatus;
     if (req.body.notes) booking.notes = req.body.notes;
+
+    //Get Total Price Before Editing 
+    const oldTotalPrice = booking.totalPrice;
 
     //Recalculate total price
     const diffDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     const car = await Car.findById(booking.car);
     booking.totalPrice = car.pricePerDay * diffDays;
 
+    //Save Booking Updates
     await booking.save();
+
+    const bill = await Bill.findOne({ user: user._id, status: 'continous'});
+    if(bill){
+      const bookingItem = bill.items.find(item => 
+        item.bookingId.toString() === booking._id.toString()
+      )
+
+      if(bookingItem){
+        bill.totalPrice = bill.totalPrice - oldTotalPrice + booking.totalPrice;
+        await bill.save();
+      }
+    }
+
     await booking.populate(['car']);
+    createNotification(user._id, 'Update Car Rental', `You Car Rental Updated Successfully And Set To ${diffDays} days`, 'car');
     res.json({ status: 'success', message: 'Booking updated successfully', data: { booking } });
 });
 
@@ -113,6 +137,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
 // @desc    Cancel a car booking
 // @access  Private (User)
 exports.cancelBooking = asyncHandler(async (req, res) => {
+  const user = req.user;
   const { id } = req.params;
   const booking = await CarBooking.findById(id);
   if (!booking) {
@@ -130,6 +155,22 @@ exports.cancelBooking = asyncHandler(async (req, res) => {
   booking.status = 'cancelled';
   await booking.save();
 
+  const bill = await Bill.findOne({ user: user._id, status: 'continous' });
+    if (bill) {
+        const bookingItem = bill.items.find(item => 
+            item.bookingId.toString() === booking._id.toString()
+        );
+   
+        if (bookingItem) {
+            bill.items = bill.items.filter(item => 
+                item.bookingId.toString() !== booking._id.toString()
+            );
+            
+            bill.totalPrice -= booking.totalPrice;
+            await bill.save();
+        }
+    }
+
   //Update car status if this is the last active booking for the car
   const car = await Car.findById(booking.car);
   if (car && car.booked_until && +car.booked_until === +booking.endDate) {
@@ -139,7 +180,8 @@ exports.cancelBooking = asyncHandler(async (req, res) => {
   }
 
   await booking.populate(['car']);
-  res.json({ status: 'success', message: 'Booking cancelled successfully', data: { booking } });
+  createNotification(user._id, 'Cancle A Car Rental', 'Your Car Rental Canclelled Successfully', 'car')
+  res.json({ status: 'success', message: 'Booking cancelled successfully' });
 });
 
 
@@ -151,7 +193,7 @@ exports.getBookingById = factory.GetOne(CarBooking, {
   select: 'brand model images',
   populate:{
     path: 'office',
-    select: 'name city counntry phone'
+    select: 'name city country phone'
   }
 });
 
@@ -164,12 +206,17 @@ exports.getAllBookings = factory.GetAll(CarBooking, 'car');
 // @desc    Get all my car bookings
 // @access  Private (User)
 exports.getMyBookings = asyncHandler(async (req, res) => {
-  const bookings = await CarBooking.find({ user: req.user._id }).populate({
+
+  const bookings = await CarBooking.find({ 
+    user: req.user._id,
+    status: { $nin: ['cancelled', 'completed'] },
+    endDate: { $gt: new Date() }
+  }).populate({
     path: 'car',
     select: 'brand model images',
     populate:{
       path: 'office',
-      select: 'name city counntry phone'
+      select: 'name city country phone'
     }
   });
 
