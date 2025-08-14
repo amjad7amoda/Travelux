@@ -12,14 +12,16 @@ const {
     deleteRoom,
     createFilterObj,
     uploadRoomImage,
-    resizeImage
+    resizeImage,
+    checkNoRoomsInHotel
 } = require('../../services/Hotels/roomService');
 
 const { createRoomValidator,
     getRoomValidator,
     getAllRoomsValidator,
     updateRoomValidator,
-    deleteRoomValidator } = require('../../utils/validators/Hotels/roomValidator');
+    deleteRoomValidator,
+} = require('../../utils/validators/Hotels/roomValidator');
 
 router.route('/')
     .post(authService.protect, authService.allowTo('hotelManager'),
@@ -28,7 +30,7 @@ router.route('/')
         setHotelIdToBody,
         createRoomValidator,
         createRoom)
-    .get(createFilterObj, getAllRoomsValidator, getAllRooms);
+    .get(createFilterObj, getAllRoomsValidator, checkNoRoomsInHotel, getAllRooms);
 
 router.route('/:id')
     .get(createFilterObj, getRoomValidator, getRoom)
