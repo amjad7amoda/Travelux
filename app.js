@@ -36,10 +36,12 @@ const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus');
+const eventRouter = require('./routes/trips/eventRoute');
+const tripRouter = require('./routes/trips/tripRoute');
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
-
+const billServices = require('./services/Payments/billServices');
 
 //======== Config Requirement ========//
 env.config();
@@ -98,6 +100,10 @@ app.use('/api/cars', carBookingRoute);
 
 app.use('/api/user-fcm-tokens', userFcmTokenRouter);
 app.use('/api/mynotifications', myNotificationRouter);
+app.use('/api/payments/coupons', couponRouter);
+app.use('/api/payments/bill', billRouter);
+app.use('/api/events', eventRouter);
+app.use('/api/trips', tripRouter);
 
 //======== Setup the server ========//
 const port = process.env.PORT;
