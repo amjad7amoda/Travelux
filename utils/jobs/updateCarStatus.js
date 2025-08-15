@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const Car = require('../../models/Cars/carModel');
 const CarBooking = require('../../models/Cars/carBookingModel');
+const Bill = require('../../models/Payments/billModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 
 function scheduleCarStatusCheck() {
@@ -40,6 +41,57 @@ function scheduleCarStatusCheck() {
             }
         } catch (error) {
             console.log('Error in car status check:', error);
+        }
+    });
+
+    // Check for unpaid bookings every minute and remove them after 1 hour
+    cron.schedule('* * * * *', async () => {
+        try {
+            const currentDate = new Date();
+            const oneHourAgo = new Date(currentDate.getTime() - (60 * 60 * 1000));
+            
+            const unpaidBookings = await CarBooking.find({
+                paymentStatus: 'pending_payment',
+                createdAt: { $lt: oneHourAgo }
+            });
+
+            for (const booking of unpaidBookings) {
+                try {
+                    const bill = await Bill.findOne({
+                        user: booking.user,
+                        status: 'continous'
+                    });
+
+                    if (bill) {
+                        const existingItem = bill.items.find(item => 
+                            item.bookingId.toString() === booking._id.toString() && 
+                            item.bookingType === 'CarBooking'
+                        );
+                        if (existingItem) {
+                            // Remove the booking item from bill
+                            bill.items = bill.items.filter(item => 
+                                !(item.bookingId.toString() === booking._id.toString() && item.bookingType === 'CarBooking')
+                            );
+                            
+                            // Subtract the deleted booking price from total price
+                            bill.totalPrice = Math.max(0, bill.totalPrice - booking.totalPrice);
+                            
+                            await bill.save();
+                        }
+                    }
+
+                    // Change booking status to cancelled instead of deleting
+                    booking.status = 'cancelled';
+                    booking.paymentStatus = 'failed';
+                    await booking.save();
+                    console.log(`Booking Cancelled | Unpaid booking ${booking._id} status changed to cancelled`);
+                    
+                } catch (bookingError) {
+                    console.log(`Error processing booking ${booking._id}:`, bookingError);
+                }
+            }
+        } catch (error) {
+            console.log('Error in car booking status check:', error);
         }
     });
 }

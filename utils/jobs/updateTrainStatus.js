@@ -2,7 +2,8 @@ const TrainTrip = require('../../models/Trains/trainTripModel');
 const Train = require('../../models/Trains/trainModel');
 const cron = require('node-cron');
 const asyncHandler = require('../../middlewares/asyncHandler');
-const TrainTripBooking = require('../../models/Trains/trainTripBookingModel')
+const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
+const Bill = require('../../models/Payments/billModel');
 
 function scheduleTrainStatusCheck() {
     cron.schedule('* * * * *', asyncHandler(async () => {
@@ -59,6 +60,53 @@ function scheduleTrainStatusCheck() {
 
 
     }));
+
+    // Check for unpaid train bookings every minute and remove them after 1 hour
+    cron.schedule('* * * * *', async () => {
+        try {
+            const currentDate = new Date();
+            const oneHourAgo = new Date(currentDate.getTime() - (60 * 60 * 1000)); // 1 hour ago
+            
+            const unpaidBookings = await TrainTripBooking.find({
+                paymentStatus: 'pending_payment',
+                createdAt: { $lt: oneHourAgo }
+            });
+
+            for (const booking of unpaidBookings) {
+                try {
+                    const bill = await Bill.findOne({
+                        user: booking.user,
+                        status: 'continous'
+                    });
+
+                    if (bill) {
+                        const existingItem = bill.items.find(item => 
+                            item.bookingId.toString() === booking._id.toString() && 
+                            item.bookingType === 'TrainTripBooking'
+                        );
+      
+                        if (existingItem) {                            
+                            bill.items = bill.items.filter(item => 
+                                !(item.bookingId.toString() === booking._id.toString() && item.bookingType === 'TrainTripBooking')
+                            );
+                            bill.totalPrice = Math.max(0, bill.totalPrice - booking.totalPrice);
+                            await bill.save();
+                        }
+                    }
+                    
+                    booking.status = 'cancelled';
+                    booking.paymentStatus = 'failed';
+                    await booking.save();
+                    console.log(`Train Booking Cancelled | Unpaid booking ${booking._id} status changed to cancelled`);
+                    
+                } catch (bookingError) {
+                    console.log(`Error processing train booking ${booking._id}:`, bookingError);
+                }
+            }
+        } catch (error) {
+            console.log('Error in train booking status check:', error);
+        }
+    });
 }
 
 module.exports =  scheduleTrainStatusCheck ;

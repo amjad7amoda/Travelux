@@ -44,7 +44,7 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
     if(!bill)
         bill = await Bill.create({ user: user._id, status: 'continous' });
 
-    const item = await BookingModel.findOne({ _id: bookingId, paymentStatus: { $ne: 'paid' } });
+    const item = await BookingModel.findOne({ _id: bookingId, user: user._id, paymentStatus: { $eq: 'pending_payment' } });
     if(!item)
         return res.status(400).json({
             status: 'fail',
@@ -84,36 +84,62 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
 exports.showBillDetails = asyncHandler(
     async(req, res, next) => {
         const user = req.user;
-        const status = req.query.status
+        const status = req.query.status;
         let bill;
+        
         if(status === 'completed'){
             bill = await Bill.find({ user: user._id, status: 'completed'});
 
+            for (let singleBill of bill) {
+                await singleBill.populate({
+                    path: 'items.bookingId',
+                    select: '-__v -user',
+                    options: { skipUserPopulate: true }
+                });
+
+                // Then manually populate nested relations based on booking type
+                for (let item of singleBill.items) {
+                    if(item.bookingId) {
+                        await populateBookingDetails(item);
+                    }
+                }
+                
+                // Populate coupons
+                await singleBill.populate({
+                    path: 'coupons',
+                    select: 'code discount expiresAt'
+                });
+            }
+
             return res.json({
                 status: 'success',
+                message: `[${bill.length}] Completed bills fetched successfully`,
                 data: {
-                    bill
+                    completedBills: bill
                 }
-            })
+            });
         }
 
+        // If status is not 'completed' or not provided, return the continuous bill
+        bill = await Bill.findOne({ user: user._id, status: 'continous' });
 
-            bill = await Bill.findOne({ user: user._id, status: 'continous' });
-
-        if(!bill)
+        if(!bill) {
             return next(new ApiError(`You don't have a bill`));
+        }
 
         // First populate the bookingId using refPath
         await bill.populate({
-                path: 'items.bookingId',
-                select: '-__v -user',
-                options: { skipUserPopulate: true }
+            path: 'items.bookingId',
+            select: '-__v -user',
+            options: { skipUserPopulate: true }
         });
 
         // Then manually populate nested relations based on booking type
-        for (let item of bill.items) 
-            if(item.bookingId)
+        for (let item of bill.items) {
+            if(item.bookingId) {
                 await populateBookingDetails(item);
+            }
+        }
         
         //Coupons Check and change totalPriceAfterDiscount
         const billCoupons = bill.coupons;   
@@ -142,24 +168,25 @@ exports.showBillDetails = asyncHandler(
                 totalDiscountPercent += coupon.discount;
             });
             if (totalDiscountPercent > 100) totalDiscountPercent = 100;
-        
             bill.totalPriceAfterDiscount = bill.totalPrice * (1 - totalDiscountPercent / 100);
-            await bill.save();
+        }else{
+            bill.totalPriceAfterDiscount = bill.totalPrice;
         }
+        await bill.save();
 
         await bill.populate({
             path: 'coupons',
             select: 'code discount expiresAt'
-        })
+        });
 
         return res.json({
             status: 'success',
             data: {
                 bill
             }
-        })
+        });
     }
-)
+);
 
 exports.showSpecificBill = asyncHandler(async(req, res, next) => {
     const user = req.user;
