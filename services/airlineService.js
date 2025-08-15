@@ -143,5 +143,13 @@ exports.updateOwnerAirline = asyncHandler(async (req, res, next) => {
 });
 
 
+//@desc get statistics
+//@route get /api/airlines/myAirline/statistics
+//@access private [airline owner]
+exports.getStatistics = asyncHandler(async (req, res, next) => {
+
+
+
+});
 
 

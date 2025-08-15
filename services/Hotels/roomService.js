@@ -60,6 +60,16 @@ exports.setHotelIdToBody = (req, res, next) => {
     next();
 };
 
+exports.checkNoRoomsInHotel = (async (req, res, next) => {
+    const rooms = await Room.find({ hotel: req.params.hotelId });
+    if (!rooms || rooms.length === 0) {
+        return res.status(200).json({
+            status: 'SUCCESS', data: { rooms: [] }
+        });
+    }
+    next();
+});
+
 exports.createFilterObj = (req, res, next) => {
     let filter = {};
     if (req.params.hotelId) {
