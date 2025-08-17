@@ -147,9 +147,152 @@ exports.updateOwnerAirline = asyncHandler(async (req, res, next) => {
 //@route get /api/airlines/myAirline/statistics
 //@access private [airline owner]
 exports.getStatistics = asyncHandler(async (req, res, next) => {
+    const Flight = require('../models/flightModel');
+    const FlightTicket = require('../models/flightTicketModel');
+    
+    // Get the airline owned by the current user
+    const airline = await Airline.findOne({ owner: req.user._id });
+    if (!airline) {
+        return next(new ApiError('You are not owner of any airline', 404));
+    }
 
+    // Calculate current period (current month)
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+    // Calculate previous period (previous month)
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
+    // Helper function to calculate percentage change
+    const calculateChange = (current, previous) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+    };
+
+    // Helper function to determine trend
+    const getTrend = (change) => {
+        if (change > 0) return 'up';
+        if (change < 0) return 'down';
+        return 'neutral';
+    };
+
+    // Get completed flights (successful status)
+    const completedFlightsCurrent = await Flight.countDocuments({
+        airline: airline._id,
+        status: 'successful',
+        arrivalDate: { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const completedFlightsPrevious = await Flight.countDocuments({
+        airline: airline._id,
+        status: 'successful',
+        arrivalDate: { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get active flights (pending and onTheWay status)
+    const activeFlightsCurrent = await Flight.countDocuments({
+        airline: airline._id,
+        status: { $in: ['pending', 'onTheWay'] },
+        departureDate: { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const activeFlightsPrevious = await Flight.countDocuments({
+        airline: airline._id,
+        status: { $in: ['pending', 'onTheWay'] },
+        departureDate: { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get cancelled flights
+    const cancelledFlightsCurrent = await Flight.countDocuments({
+        airline: airline._id,
+        status: 'cancelled',
+        updatedAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const cancelledFlightsPrevious = await Flight.countDocuments({
+        airline: airline._id,
+        status: 'cancelled',
+        updatedAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get total revenue from flight tickets
+    const totalRevenueCurrent = await FlightTicket.aggregate([
+        {
+            $match: {
+                airline: airline._id,
+                status: { $in: ['active', 'expired'] }, // Only count paid tickets
+                paymentStatus: 'paid',
+                createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$finalPrice' }
+            }
+        }
+    ]);
+
+    const totalRevenuePrevious = await FlightTicket.aggregate([
+        {
+            $match: {
+                airline: airline._id,
+                status: { $in: ['active', 'expired'] }, // Only count paid tickets
+                paymentStatus: 'paid',
+                createdAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$finalPrice' }
+            }
+        }
+    ]);
+
+    const revenueCurrent = totalRevenueCurrent[0]?.total || 0;
+    const revenuePrevious = totalRevenuePrevious[0]?.total || 0;
+
+    // Calculate changes and trends
+    const completedFlightsChange = calculateChange(completedFlightsCurrent, completedFlightsPrevious);
+    const activeFlightsChange = calculateChange(activeFlightsCurrent, activeFlightsPrevious);
+    const cancelledFlightsChange = calculateChange(cancelledFlightsCurrent, cancelledFlightsPrevious);
+    const totalRevenueChange = calculateChange(revenueCurrent, revenuePrevious);
+
+    const stats = {
+        completedFlights: {
+            current: completedFlightsCurrent,
+            previous: completedFlightsPrevious,
+            change: Math.round(completedFlightsChange * 100) / 100,
+            trend: getTrend(completedFlightsChange)
+        },
+        activeFlights: {
+            current: activeFlightsCurrent,
+            previous: activeFlightsPrevious,
+            change: Math.round(activeFlightsChange * 100) / 100,
+            trend: getTrend(activeFlightsChange)
+        },
+        cancelledFlights: {
+            current: cancelledFlightsCurrent,
+            previous: cancelledFlightsPrevious,
+            change: Math.round(cancelledFlightsChange * 100) / 100,
+            trend: getTrend(cancelledFlightsChange)
+        },
+        totalRevenue: {
+            current: revenueCurrent,
+            previous: revenuePrevious,
+            change: Math.round(totalRevenueChange * 100) / 100,
+            trend: getTrend(totalRevenueChange),
+            currency: "USD"
+        }
+    };
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: { stats }
+    });
 });
 
 

@@ -21,7 +21,7 @@ const tripSchema = new mongoose.Schema({
         required: true,
         min: [0, 'Trip price must be greater than 0'],
     },
-    // auto calculate from events start and end time
+    // auto calculate from events start and end time [days]
     duration: {
         type: Number,
         required: true,
@@ -52,27 +52,27 @@ const tripSchema = new mongoose.Schema({
         required: true,
         default: 'english',
     },
-    // in body
+    // in body , just one category
     category: {
         type: String,
         required: true,
         enum: ['adventure',
              'cultural',
-              'nature',
+                'nature',
                'family',
-                'romantic'
-                , 'hiking',
-                 'beach',
-                  'skiing'
-                  , 'camping',
-                   'fishing',
-                    'sightseeing',
-                     'food',
-                      'music',
-                       'art',
-                        'history',
-                         'sports',
-                          'other'],
+                'romantic',
+                'hiking',
+                'beach',
+                'skiing',
+                'camping',
+                'fishing',
+                'sightseeing',
+                'food',
+                'music',
+                'art',
+                'history',
+                'sports',
+                 'other'],
     },
     //default
     requirements: {
@@ -94,7 +94,7 @@ const tripSchema = new mongoose.Schema({
     //default
     status: {
         type: String,
-        enum: ['pending', 'approved', 'rejected'],
+        enum: ['pending','cancelled','completed','full'],
             default: 'pending',
     },
     //in body   
@@ -110,6 +110,7 @@ const tripSchema = new mongoose.Schema({
                 required: true,
                 min: 1
             },
+            //hours
             duration: {
                 type: Number,
                 required: true,
@@ -125,7 +126,7 @@ const tripSchema = new mongoose.Schema({
                 required: true
             }
         }],
-        default: []
+        required: true,
     },
     //in body
     tripCover: {
@@ -134,7 +135,21 @@ const tripSchema = new mongoose.Schema({
     },
 }, {timestamps: true,});
 
-
+// get one && get all && update
+tripSchema.post('init',async(doc)=>{
+    if(doc.tripCover){
+        // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
+        if(doc.tripCover.startsWith('http')){
+            // استخراج اسم الملف من الرابط
+            const fileName = doc.tripCover.split('/').pop();
+            doc.tripCover = `http://localhost:${process.env.PORT}/trips/${fileName}`;
+        } else {
+            // إذا كان اسم ملف فقط، إضافة الرابط الكامل
+            const tripCoverUrl = `http://localhost:${process.env.PORT}/trips/${doc.tripCover}`;
+            doc.tripCover = tripCoverUrl;
+        }
+    }
+})
 
 const Trip = mongoose.model('Trip', tripSchema);
 module.exports = Trip;

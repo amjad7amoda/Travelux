@@ -8,7 +8,8 @@ const {
     updateOwnerAirline,
     uploadAirlineImages,
     resizeAirlineImages,
-    setAirlineOwner
+    setAirlineOwner,
+    getStatistics
 } = require('../services/airlineService');
 const {
     getAirlineValidator,
@@ -36,6 +37,10 @@ router.route('/myAirline').get(protect,getOwnerAirline)
 
                 .put(protect,allowTo('airlineOwner'),uploadAirlineImages,
                 resizeAirlineImages,updateOwnerAirlineValidator,updateOwnerAirline);
+
+// @route GET /api/airlines/myAirline/statistics
+// @access private [airline owner]
+router.get('/myAirline/statistics', protect, allowTo('airlineOwner'), getStatistics);
 
 router.route('/:id').get(protect,getAirlineValidator,getAirline)
                     .put(protect,allowTo('admin'),uploadAirlineImages,

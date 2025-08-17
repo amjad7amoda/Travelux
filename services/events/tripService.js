@@ -44,6 +44,103 @@ const deleteOldTripCover = async (coverFileName) => {
     }
 };
 
+// middleware to convert events to json
+exports.convertEventsToJson = asyncHandler(async(req,res,next)=>{
+    if (req.body.events) {
+        req.body.events = JSON.parse(req.body.events);
+    }
+    next();
+});
+
+// middleware to calculate duration of trip
+exports.calculateTripDuration = asyncHandler(async (req, res, next) => {
+    if (req.body.events && Array.isArray(req.body.events) && req.body.events.length > 0) {
+        // افتراض أن المصفوفة مرتبة تصاعدياً حسب التاريخ والتسلسل
+        // أول حدث في المصفوفة
+        const firstEvent = req.body.events[0];
+        // آخر حدث في المصفوفة
+        const lastEvent = req.body.events[req.body.events.length - 1];
+        
+        // حساب الفرق بالأيام بين تاريخ بداية أول حدث وتاريخ نهاية آخر حدث
+        const firstEventStart = new Date(firstEvent.startTime);
+        const lastEventEnd = new Date(lastEvent.endTime);
+        
+        const timeDifference = lastEventEnd.getTime() - firstEventStart.getTime();
+        const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+        
+        // إضافة يوم واحد إذا كان الفرق أقل من يوم كامل
+        const finalDuration = daysDifference < 1 ? 1 : daysDifference;
+        
+        // تعيين مدة الرحلة
+        req.body.duration = finalDuration;
+    }
+    
+    next();
+});
+
+// middleware to set endtime of each event from starttime and duration
+exports.setEndTimeOfEachEvent = asyncHandler(async (req, res, next) => {
+    if (req.body.events && Array.isArray(req.body.events) && req.body.events.length > 0) {
+        req.body.events.forEach(event => {
+            // تحويل startTime إلى Date object إذا كان string
+            const startTime = typeof event.startTime === 'string' ? new Date(event.startTime) : event.startTime;
+            // duration يمثل الساعات، لذا نضرب في 60 * 60 * 1000 (ساعة واحدة بالميلي ثانية)
+            // 60 * 60 * 1000 = 3,600,000 ميلي ثانية (ساعة واحدة)
+            event.endTime = new Date(startTime.getTime() + event.duration * 60 * 60 * 1000);
+        });
+    }
+    next();
+});
+
+// middleware to sort events by startTime and assign order
+exports.sortEventsAndAssignOrder = asyncHandler(async (req, res, next) => {
+    if (req.body.events && Array.isArray(req.body.events) && req.body.events.length > 0) {
+        // ترتيب الأحداث حسب startTime تصاعدياً (يراعي التاريخ والوقت معاً)
+        req.body.events.sort((a, b) => {
+            const dateA = typeof a.startTime === 'string' ? new Date(a.startTime) : a.startTime;
+            const dateB = typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime;
+            return dateA.getTime() - dateB.getTime();
+        });
+        
+        // تعيين order مناسب لكل event (1, 2, 3, ...)
+        req.body.events.forEach((event, index) => {
+            event.order = index + 1;
+        });
+    }
+    next();
+});
+
+// middleware to check for event time conflicts
+exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
+    if (req.body.events && Array.isArray(req.body.events) && req.body.events.length > 0) {
+        const events = req.body.events;
+        
+        for (let i = 0; i < events.length - 1; i++) {
+            const currentEvent = events[i];
+            const nextEvent = events[i + 1];
+            
+            // تحويل startTime إلى Date object إذا كان string
+            const currentStartTime = typeof currentEvent.startTime === 'string' ? new Date(currentEvent.startTime) : currentEvent.startTime;
+            const nextStartTime = typeof nextEvent.startTime === 'string' ? new Date(nextEvent.startTime) : nextEvent.startTime;
+            
+            // حساب وقت انتهاء الحدث الحالي
+            const currentEventEnd = new Date(currentStartTime.getTime() + currentEvent.duration * 60 * 60 * 1000);
+            
+            // التحقق من أن الحدث التالي لا يبدأ قبل انتهاء الحدث الحالي
+            if (nextStartTime < currentEventEnd) {
+                return next(new ApiError(
+                    `Time conflict: Event "${nextEvent.eventId}" starts at ${nextEvent.startTime} before the previous event "${currentEvent.eventId}" ends at ${currentEventEnd}`,
+                    400
+                ));
+            }
+        }
+    }
+    next();
+});
+
+
+//**********services ********** */
+
 // @desc get list of trips
 // @route get /api/trips
 // @access public [user ,admin]
@@ -52,26 +149,239 @@ exports.getTrips = factory.GetAll(Trip,'Trip');
 // @desc get specific trip
 // @route get /api/trips/:id
 // @access public [user ,admin]
-exports.getTrip = factory.GetOne(Trip,'Trip');
+exports.getTrip = asyncHandler(async(req,res,next)=>{
+    // populate events.eventId with event details and guider details
+    const trip = await Trip.findById(req.params.id).populate('events.eventId').populate('guider');
+    res.status(200).json({data:trip});
+});
 
 // @desc create trip
 // @route post /api/trips
 // @access private [admin]
 exports.createTrip = asyncHandler(async(req,res,next)=>{
-    if (req.body.events) {
-        const events = JSON.parse(req.body.events); 
-    }
     const trip = await Trip.create(
-        title
-        ,description
-        ,price
-        ,country
-        ,city
-        ,maxGroupSize
-        ,category
-        ,guider
-        ,events
-        ,tripCover
-    );
+        {title:req.body.title,
+        description:req.body.description,
+        price:req.body.price,
+        duration:req.body.duration,
+        country:req.body.country,
+        city:req.body.city,
+        maxGroupSize:req.body.maxGroupSize,
+        category:req.body.category,
+        guider:req.body.guider,
+        events:req.body.events,
+        tripCover:req.body.tripCover,
+    });
     res.status(201).json({data:trip});
+});
+
+// @desc update trip
+// @route put /api/trips/:id
+// @access private [admin]
+exports.updateTrip = asyncHandler(async(req,res,next)=>{
+    const {id} = req.params;
+    
+    // التحقق من وجود الرحلة
+    const trip = await Trip.findById(id);
+    if (!trip) {
+        return next(new ApiError('Trip not found', 404));
+    }
+
+    // التحقق من maxGroupSize إذا كان يتم تحديثه
+    if (req.body.maxGroupSize !== undefined) {
+        if (req.body.maxGroupSize < trip.registeredUsers.length) {
+            return next(new ApiError(
+                `Max group size cannot be less than current registered users count (${trip.registeredUsers.length})`,
+                400
+            ));
+        }
+    }
+
+    // التحقق من country و city إذا كان يتم تحديثهما
+    if (req.body.country || req.body.city) {
+        const countryToCheck = req.body.country || trip.country;
+        const cityToCheck = req.body.city || trip.city;
+        
+        // التحقق من أن البلد موجود في europeanCountries
+        const europeanCountries = require('../../data/europeanCountries.json');
+        const countryExists = europeanCountries.countries.find(
+            country => country.name.toLowerCase() === countryToCheck.toLowerCase()
+        );
+        
+        if (!countryExists) {
+            return next(new ApiError('Country must be a valid European country', 400));
+        }
+        
+        // التحقق من أن المدينة تنتمي للبلد
+        const cityExists = countryExists.cities.some(
+            city => city.toLowerCase() === cityToCheck.toLowerCase()
+        );
+        
+        if (!cityExists) {
+            return next(new ApiError(`City must be a valid city in ${countryToCheck}`, 400));
+        }
+    }
+
+    // تحديث الرحلة
+    const updatedTrip = await Trip.findByIdAndUpdate(
+        id,
+        req.body,
+        { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ data: updatedTrip });
+});
+
+
+// @desc add event to trip by id 
+//@route post /api/trips/:tripid/events
+//@access private [admin]
+exports.addEventToTrip = asyncHandler(async(req,res,next)=>{
+    const {tripId} = req.params;
+    const {eventId} = req.body;
+    
+    const trip = await Trip.findById(tripId);
+    const event = await Event.findById(eventId);
+    
+    // check if event is in trip
+    if (trip.events.includes(eventId)) {
+        return next(new ApiError('Event already in trip', 400));
+    }
+    
+    // copy from events array
+    const eventsCopy = [...trip.events];
+    
+    // تحويل startTime إلى Date object إذا كان string
+    const startTime = typeof req.body.startTime === 'string' ? new Date(req.body.startTime) : req.body.startTime;
+    
+    // new event
+    const newEvent = {
+        eventId:req.body.eventId,
+        order: eventsCopy.length + 1,
+        duration: req.body.duration,
+        startTime: startTime,
+        endTime: new Date(startTime.getTime() + req.body.duration * 60 * 60 * 1000),
+    }
+    // add new event to eventsCopy
+    eventsCopy.push(newEvent);
+    
+    // reorder eventsCopy array by startTime
+    eventsCopy.sort((a,b)=>{
+        const dateA = typeof a.startTime === 'string' ? new Date(a.startTime) : a.startTime;
+        const dateB = typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime;
+        return dateA.getTime()-dateB.getTime();
+    });
+
+    // إعادة تعيين order للأحداث بعد الترتيب
+    eventsCopy.forEach((event, index) => {
+        event.order = index + 1;
+    });
+
+    // check for conflict 
+    for (let i = 0; i < eventsCopy.length - 1; i++) {
+        const currentEvent = eventsCopy[i];
+        const nextEvent = eventsCopy[i + 1];
+        
+        // تحويل startTime إلى Date object إذا كان string
+        const currentStartTime = typeof currentEvent.startTime === 'string' ? new Date(currentEvent.startTime) : currentEvent.startTime;
+        const nextStartTime = typeof nextEvent.startTime === 'string' ? new Date(nextEvent.startTime) : nextEvent.startTime;
+        
+        // حساب وقت انتهاء الحدث الحالي
+        const currentEventEnd = new Date(currentStartTime.getTime() + currentEvent.duration * 60 * 60 * 1000);
+        
+        // التحقق من أن الحدث التالي لا يبدأ قبل انتهاء الحدث الحالي
+        if (nextStartTime < currentEventEnd) {
+            return next(new ApiError(
+                `Time conflict: Event "${nextEvent.eventId}" starts at ${nextEvent.startTime} before the previous event "${currentEvent.eventId}" ends at ${currentEventEnd}`,
+                400
+            ));
+        }
+    }
+
+    // calculate new duration
+    const firstEvent = eventsCopy[0];
+    const lastEvent = eventsCopy[eventsCopy.length - 1];
+    
+    // حساب الفرق بالأيام بين تاريخ بداية أول حدث وتاريخ نهاية آخر حدث
+    const firstEventStart = typeof firstEvent.startTime === 'string' ? new Date(firstEvent.startTime) : firstEvent.startTime;
+    const lastEventEnd = typeof lastEvent.endTime === 'string' ? new Date(lastEvent.endTime) : lastEvent.endTime;
+    
+    const timeDifference = lastEventEnd.getTime() - firstEventStart.getTime();
+    const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+    
+    // إضافة يوم واحد إذا كان الفرق أقل من يوم كامل
+    const finalDuration = daysDifference < 1 ? 1 : daysDifference;
+
+    // update trip
+    trip.events = eventsCopy;
+    trip.duration = finalDuration;
+    await trip.save();
+
+
+
+    res.status(200).json({data:trip});
+});
+
+
+
+
+
+// @desc delete event from trip by id 
+//@route delete /api/trips/:tripid/events/:eventid
+//@access private [admin]
+exports.deleteEventFromTrip = asyncHandler(async(req,res,next)=>{
+    const {tripId,eventId} = req.params;
+
+    // check if trip exists
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+        return next(new ApiError('Trip not found', 404));
+    }
+
+    // check if event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+        return next(new ApiError('Event not found', 404));
+    }
+
+    // check if event is in trip
+    const eventInTrip = trip.events.find(e => e.eventId.toString() === eventId);
+    if (!eventInTrip) {
+        return next(new ApiError('Event not found in trip', 404));
+    }
+
+    // get copy from events array 
+    let eventsCopy = [...trip.events];
+
+    // delete event from eventsCopy
+    eventsCopy = eventsCopy.filter(event => event.eventId.toString() !== eventId);
+
+    // reorder eventsCopy array
+    eventsCopy.forEach((event,index)=>{
+        event.order = index + 1;
+    });
+
+    // calculate new duration
+    const firstEvent = eventsCopy[0];
+
+    // آخر حدث في المصفوفة
+    const lastEvent = eventsCopy[eventsCopy.length - 1];
+    
+    // حساب الفرق بالأيام بين تاريخ بداية أول حدث وتاريخ نهاية آخر حدث
+    const firstEventStart = typeof firstEvent.startTime === 'string' ? new Date(firstEvent.startTime) : firstEvent.startTime;
+    const lastEventEnd = typeof lastEvent.endTime === 'string' ? new Date(lastEvent.endTime) : lastEvent.endTime;
+    
+    const timeDifference = lastEventEnd.getTime() - firstEventStart.getTime();
+    const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+    
+    // إضافة يوم واحد إذا كان الفرق أقل من يوم كامل
+    const finalDuration = daysDifference < 1 ? 1 : daysDifference;
+
+    // update trip
+    trip.events = eventsCopy;
+    trip.duration = finalDuration;
+    await trip.save();
+
+
+    res.status(200).json({data:trip});
 });
