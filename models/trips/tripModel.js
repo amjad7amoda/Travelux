@@ -80,11 +80,23 @@ const tripSchema = new mongoose.Schema({
         default: ['valid passport', 'comfortable walking shoes']
     },
     //default
-    registeredUsers: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'User',
-        default: []
-    },
+    registeredUsers: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        tripTicketId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'TripTicket',
+            required: true
+        },
+        numberOfPassengers: {
+            type: Number,
+            required: true,
+            min: 1
+        }
+    }],
     // in body
     guider: {
         type: mongoose.Schema.Types.ObjectId,

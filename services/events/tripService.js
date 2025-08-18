@@ -187,9 +187,20 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
         return next(new ApiError('Trip not found', 404));
     }
 
+    // تحديد الخانات المسموح بتحديثها فقط
+    const allowedFields = ['title', 'description', 'price', 'country', 'city', 'maxGroupSize', 'category', 'guider', 'status', 'tripCover'];
+    
+    // إنشاء object يحتوي فقط على الخانات المسموح بها
+    const updateData = {};
+    allowedFields.forEach(field => {
+        if (req.body[field] !== undefined) {
+            updateData[field] = req.body[field];
+        }
+    });
+
     // التحقق من maxGroupSize إذا كان يتم تحديثه
-    if (req.body.maxGroupSize !== undefined) {
-        if (req.body.maxGroupSize < trip.registeredUsers.length) {
+    if (updateData.maxGroupSize !== undefined) {
+        if (updateData.maxGroupSize < trip.registeredUsers.length) {
             return next(new ApiError(
                 `Max group size cannot be less than current registered users count (${trip.registeredUsers.length})`,
                 400
@@ -198,9 +209,9 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
     }
 
     // التحقق من country و city إذا كان يتم تحديثهما
-    if (req.body.country || req.body.city) {
-        const countryToCheck = req.body.country || trip.country;
-        const cityToCheck = req.body.city || trip.city;
+    if (updateData.country || updateData.city) {
+        const countryToCheck = updateData.country || trip.country;
+        const cityToCheck = updateData.city || trip.city;
         
         // التحقق من أن البلد موجود في europeanCountries
         const europeanCountries = require('../../data/europeanCountries.json');
@@ -222,10 +233,30 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
         }
     }
 
-    // تحديث الرحلة
+    // التحقق من guider إذا كان يتم تحديثه
+    if (updateData.guider) {
+        const User = require('../../models/userModel');
+        const guider = await User.findById(updateData.guider);
+        if (!guider) {
+            return next(new ApiError('Guider not found', 404));
+        }
+        if (guider.role !== 'guider') {
+            return next(new ApiError('User must have guider role', 400));
+        }
+    }
+
+    // تحديث الصورة إذا كان هناك ملف جديد
+    if (req.file && trip.tripCover) {
+        // حذف الصورة القديمة
+        await deleteOldTripCover(trip.tripCover);
+        // إضافة اسم الصورة الجديدة
+        updateData.tripCover = req.body.tripCover;
+    }
+
+    // تحديث الرحلة بالبيانات المحددة فقط
     const updatedTrip = await Trip.findByIdAndUpdate(
         id,
-        req.body,
+        updateData,
         { new: true, runValidators: true }
     );
 

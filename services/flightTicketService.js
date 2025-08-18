@@ -5,7 +5,7 @@ const ApiError = require('../utils/apiError');
 const factory = require('./handlersFactory');
 const Airline = require('../models/airlineModel');
 const { createNotification } = require('./notificationService');
-
+const Bill = require('../models/Payments/billModel');
 // ********************* Middlewares ********************* //
 
 // middleware for nested route and get all
@@ -170,6 +170,21 @@ exports.getTicketsForFlight = asyncHandler(async (req, res, next) => {
         });
         returnFlight.seatMap = seatMap;
         await returnFlight.save();
+    }
+    const bill = await Bill.findOne({ user: req.user._id, status: 'continous' });
+    if (bill) {
+        const bookingItem = bill.items.find(item => 
+            item.bookingId.toString() === ticket._id.toString()
+        );
+   
+        if (bookingItem) {
+            bill.items = bill.items.filter(item => 
+                item.bookingId.toString() !== ticket._id.toString()
+            );
+            
+            bill.totalPrice -= ticket.finalPrice;
+            await bill.save();
+        }
     }
 
     res.status(200).json({
