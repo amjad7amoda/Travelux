@@ -4,7 +4,7 @@ const billSchema = new mongoose.Schema({
     items: [{
         bookingType: {
             type: String,
-            enum: ['FlightTicket', 'CarBooking', 'Booking', 'TrainTripBooking'],
+            enum: ['FlightTicket', 'CarBooking', 'Booking', 'TrainTripBooking', 'TripTicket'],
             required: [true, 'Booking type is required']
         },
         bookingId: {

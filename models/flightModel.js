@@ -178,6 +178,11 @@ const flightSchema = new mongoose.Schema({
 // mongoose middleware to make limit fields just on get all flights
 // and populate all the fields of the airline
 flightSchema.pre('find', function(next) {
+    // skip populate if skip is true
+    if(this.options.skip) {
+        return next();
+    }
+
     this.select('departureDate arrivalDate duration priceEconomy priceBusiness departureAirport arrivalAirport returnFlight gateNumber');
     this.populate({
         path: 'airline',

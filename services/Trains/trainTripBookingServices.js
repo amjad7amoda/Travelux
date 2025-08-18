@@ -48,7 +48,7 @@ exports.bookTrainTrip = asyncHandler( async(req, res, next) => {
     if(trainTrip.status != 'preparing')
         return next(new ApiError('Train trip is not available anymore.', 400));
 
-    const prevBooking = await TrainTripBooking.find({ trainTrip: trainTrip._id, user: user._id});
+    const prevBooking = await TrainTripBooking.find({ trainTrip: trainTrip._id, user: user._id, paymentStatus: { $ne: 'paid' } });
     if(prevBooking.length != 0)
         return next(new ApiError('You alreay booked in this trip', 400));
 

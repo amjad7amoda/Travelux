@@ -7,6 +7,7 @@ const Booking = require('../../models/Hotels/hotelBookingModel');
 const TrainTripBooking = require('../../models/Trains/trainTripBookingModel');
 const Coupon = require('../../models/Payments/couponModel');
 const { createNotification } = require('../../services/notificationService')
+const TripTicket = require('../../models/trips/tripTicketModel');
 
 // Initialize Stripe with error handling for missing API key
 let stripe;
@@ -21,7 +22,8 @@ const bookingModels = {
     CarBooking,
     Booking,
     FlightTicket,
-    TrainTripBooking
+    TrainTripBooking,
+    TripTicket
 };
 
 // @desc Add Booking To Bill
@@ -45,6 +47,7 @@ exports.addProductToBill = asyncHandler(async (req, res, next) => {
         bill = await Bill.create({ user: user._id, status: 'continous' });
 
     const item = await BookingModel.findOne({ _id: bookingId, user: user._id, paymentStatus: { $eq: 'pending_payment' } });
+    
     if(!item)
         return res.status(400).json({
             status: 'fail',
@@ -121,20 +124,13 @@ exports.showBillDetails = asyncHandler(
         }
 
         // If status is not 'completed' or not provided, return the continuous bill
-        bill = await Bill.findOne({ user: user._id, status: 'continous' });
+        bill = await Bill.findOne({ user: user._id, status: 'continous' }).select('-__v -user');
 
         if(!bill) {
             return next(new ApiError(`You don't have a bill`));
         }
 
-        // First populate the bookingId using refPath
-        await bill.populate({
-            path: 'items.bookingId',
-            select: '-__v -user',
-            options: { skipUserPopulate: true }
-        });
-
-        // Then manually populate nested relations based on booking type
+        // manually populate nested relations based on booking type
         for (let item of bill.items) {
             if(item.bookingId) {
                 await populateBookingDetails(item);
@@ -241,47 +237,57 @@ exports.deleteBill = asyncHandler(async(req, res, next) => {
 })
 
 async function populateBookingDetails(item) {
+    let temp;
     switch (item.bookingType) {
+
         case 'CarBooking':
-            await item.bookingId.populate([
-                {
-                    path: 'car',
-                    select: 'brand model year',
-                }
-            ]);
-            break;
+            temp = await CarBooking.findById(item.bookingId).select('-__v -user -createdAt -updatedAt')
+            .populate([{
+                path: 'car',
+                select: 'brand model year',
+            }]);
+            item.bookingId = temp;
+        break;
+
         case 'TrainTripBooking':
-            await item.bookingId.populate([
-                {
-                    path: 'trainTrip',
-                    select: '-__v -user -stations'
-                },
-                {
+            temp = await TrainTripBooking.findById(item.bookingId).select('startStation endStation totalPrice status paymentStatus')
+            .populate([{
                     path: 'startStation',
                     select: 'name city country code'
-                },
-                {
+                }, {
                     path: 'endStation',
                     select: 'name city country code'
-                }
-            ]);
-            break;
-        case 'FlightTicket':
-            await item.bookingId.populate({
-                path: 'outboundFlight returnFlight',
-                select: '-airline',
-                options: { skipAirlinePopulate: true }
-            })
-            break;
-        case 'Booking':
-            await item.bookingId.populate([{
-                    path: 'hotel',
-                    select: 'name slug location country city starts'
-                }, {
-                    path: 'room',
-                    select: 'roomType roomNumber capacity pricePerNight '
                 }]);
-            break;
+            item.bookingId = temp;
+        break;
+
+        case 'FlightTicket':
+            temp = await FlightTicket.findById(item.bookingId).select('-__v -user -createdAt -updatedAt -bookedSeats')
+            .populate([{
+                path: 'outboundFlight returnFlight',
+                select: 'departureAirport',
+                options: { skip: true }
+            }]);
+            item.bookingId = temp;
+        break;
+
+        case 'Booking':
+            temp = await Booking.findById(item.bookingId).select('-__v -user -createdAt -updatedAt -room -checkInDate -checkOutDate')
+            .populate({
+                    path: 'hotel',
+                    select: 'name country city'
+                });
+            item.bookingId = temp;
+        break;
+            
+        case 'TripTicket': 
+            temp = await TripTicket.findById(item.bookingId).select('-__v -user -numberOfPassengers')
+            .populate({
+                path: 'trip',
+                select: 'title country city category'
+            });
+            item.bookingId = temp;
+        break;
     }
 }
 
@@ -423,7 +429,7 @@ exports.createWebhook = asyncHandler(async(req, res, next) => {
         } catch (error) {
             return res.status(500).json({
                 status: 'fail',
-                message: 'Error processing payment'
+                message: error.message
             });
         }
     }
