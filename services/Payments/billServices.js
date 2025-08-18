@@ -250,7 +250,7 @@ async function populateBookingDetails(item) {
         break;
 
         case 'TrainTripBooking':
-            temp = await TrainTripBooking.findById(item.bookingId).select('startStation endStation totalPrice status paymentStatus')
+            temp = await TrainTripBooking.findById(item.bookingId).select('-trainTrip -user -createdAt -updatedAt -estimatedTime')
             .populate([{
                     path: 'startStation',
                     select: 'name city country code'
@@ -272,7 +272,7 @@ async function populateBookingDetails(item) {
         break;
 
         case 'Booking':
-            temp = await Booking.findById(item.bookingId).select('-__v -user -createdAt -updatedAt -room -checkInDate -checkOutDate')
+            temp = await Booking.findById(item.bookingId).select('-__v -user -createdAt -updatedAt -room')
             .populate({
                     path: 'hotel',
                     select: 'name country city'
@@ -284,7 +284,10 @@ async function populateBookingDetails(item) {
             temp = await TripTicket.findById(item.bookingId).select('-__v -user -numberOfPassengers')
             .populate({
                 path: 'trip',
-                select: 'title country city category'
+                select: 'title country city category events',
+                populate: {
+                    path: 'events'
+                }
             });
             item.bookingId = temp;
         break;
