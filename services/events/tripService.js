@@ -8,6 +8,7 @@ const asyncHandler = require('../../middlewares/asyncHandler');
 const factory = require('../handlersFactory');
 const ApiError = require('../../utils/apiError');
 const { uploadSingleImage } = require('../../middlewares/uploadImageMiddleware');
+const { createNotificationForMany } = require('../notificationService');
 
 // 1-)trip cover upload
 exports.uploadTripImages = uploadSingleImage('tripCover');
@@ -144,7 +145,10 @@ exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
 // @desc get list of trips
 // @route get /api/trips
 // @access public [user ,admin]
-exports.getTrips = factory.GetAll(Trip,'Trip');
+exports.getTrips = asyncHandler(async(req,res,next)=>{
+    const trips = await Trip.find().populate('guider').populate('events.eventId');
+    res.status(200).json({data:trips});
+});
 
 // @desc get specific trip
 // @route get /api/trips/:id
@@ -260,7 +264,36 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
         { new: true, runValidators: true }
     );
 
-    res.status(200).json({ data: updatedTrip });
+    // إرسال إشعارات لجميع المستخدمين المحجوزين
+    let notificationsSent = 0;
+    if (trip.registeredUsers && trip.registeredUsers.length > 0) {
+        try {
+            // استخراج معرفات المستخدمين المحجوزين
+            const userIds = trip.registeredUsers.map(user => user.userId.toString());
+            
+            // رسالة إشعار عامة
+            const notificationMessage = `Trip "${trip.title}" has been updated. Please review the new information.`;
+            
+            // إرسال الإشعارات لجميع المستخدمين المحجوزين
+            await createNotificationForMany(
+                userIds,
+                'Trip Updated',
+                notificationMessage,
+                'trip'
+            );
+            
+            notificationsSent = userIds.length;
+        } catch (notificationError) {
+            console.error('Error sending trip update notifications to users:', notificationError);
+            // استمر حتى لو فشلت الإشعارات
+        }
+    }
+
+    res.status(200).json({ 
+        data: updatedTrip,
+        notificationsSent: notificationsSent,
+        message: `Trip updated successfully and ${notificationsSent} notifications sent to booked users`
+    });
 });
 
 

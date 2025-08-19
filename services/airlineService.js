@@ -144,9 +144,9 @@ exports.updateOwnerAirline = asyncHandler(async (req, res, next) => {
 
 
 //@desc get statistics
-//@route get /api/airlines/myAirline/statistics
+//@route get /api/airlines/myAirline/statistics1
 //@access private [airline owner]
-exports.getStatistics = asyncHandler(async (req, res, next) => {
+exports.getStatistics1 = asyncHandler(async (req, res, next) => {
     const Flight = require('../models/flightModel');
     const FlightTicket = require('../models/flightTicketModel');
     
@@ -292,6 +292,176 @@ exports.getStatistics = asyncHandler(async (req, res, next) => {
     res.status(200).json({
         status: "SUCCESS",
         data: { stats }
+    });
+});
+
+//@desc get monthly flight statistics for a specific year
+//@route get /api/airlines/myAirline/statistics2?year=2023
+//@access private [airline owner]
+exports.getStatistics2 = asyncHandler(async (req, res, next) => {
+    const Flight = require('../models/flightModel');
+    
+    // Get the airline owned by the current user
+    const airline = await Airline.findOne({ owner: req.user._id });
+    if (!airline) {
+        return next(new ApiError('You are not owner of any airline', 404));
+    }
+
+    // Get year from query parameters, default to current year
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+    
+    // Validate year (reasonable range)
+    if (year < 2020 || year > new Date().getFullYear() + 1) {
+        return next(new ApiError('Invalid year. Please provide a year between 2020 and current year + 1', 400));
+    }
+
+    // Create array to store monthly data
+    const monthlyStats = [];
+    
+    // Loop through all 12 months
+    for (let month = 0; month < 12; month++) {
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        
+        // Count flights for this month (all statuses)
+        const flightsCount = await Flight.countDocuments({
+            airline: airline._id,
+            departureDate: { $gte: monthStart, $lte: monthEnd }
+        });
+        
+        // Format month as YYYY-MM
+        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+        
+        monthlyStats.push({
+            month: monthKey,
+            flights: flightsCount
+        });
+    }
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: monthlyStats
+    });
+});
+
+//@desc get booking statistics by type (weekly, monthly, yearly)
+//@route get /api/airlines/myAirline/statistics3?type=weekly
+//@access private [airline owner]
+exports.getStatistics3 = asyncHandler(async (req, res, next) => {
+    const FlightTicket = require('../models/flightTicketModel');
+    
+    // Get the airline owned by the current user
+    const airline = await Airline.findOne({ owner: req.user._id });
+    if (!airline) {
+        return next(new ApiError('You are not owner of any airline', 404));
+    }
+
+    // Get type from query parameters, default to 'weekly'
+    const type = req.query.type || 'weekly';
+    
+    // Validate type
+    const validTypes = ['weekly', 'monthly', 'yearly'];
+    if (!validTypes.includes(type)) {
+        return next(new ApiError('Invalid type. Please provide: weekly, monthly, or yearly', 400));
+    }
+
+    // Get total bookings count
+    const totalBookings = await FlightTicket.countDocuments({
+        airline: airline._id,
+        status: { $in: ['active', 'expired', 'cancelled'] }
+    });
+
+    let periodStats = [];
+    const now = new Date();
+
+    switch (type) {
+        case 'weekly':
+            // Get daily stats for the last 8 days
+            for (let i = 7; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+                
+                const bookingsCount = await FlightTicket.countDocuments({
+                    airline: airline._id,
+                    status: { $in: ['active', 'expired', 'cancelled'] },
+                    createdAt: { $gte: dayStart, $lte: dayEnd }
+                });
+                
+                periodStats.push({
+                    period: dayStart.toISOString().split('T')[0], // YYYY-MM-DD format
+                    bookings: bookingsCount
+                });
+            }
+            break;
+
+        case 'monthly':
+            // Get weekly stats for the current month (4 weeks)
+            const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            
+            // Calculate weeks in current month
+            const firstWeekStart = new Date(currentMonthStart);
+            firstWeekStart.setDate(firstWeekStart.getDate() - firstWeekStart.getDay()); // Start of first week
+            
+            for (let i = 0; i < 4; i++) {
+                const weekStart = new Date(firstWeekStart);
+                weekStart.setDate(weekStart.getDate() + (i * 7));
+                
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+                
+                // Only include weeks that overlap with current month
+                if (weekStart <= currentMonthEnd && weekEnd >= currentMonthStart) {
+                    const bookingsCount = await FlightTicket.countDocuments({
+                        airline: airline._id,
+                        status: { $in: ['active', 'expired', 'cancelled'] },
+                        createdAt: { $gte: weekStart, $lte: weekEnd }
+                    });
+                    
+                    const weekLabel = `Week ${i+1} (${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]})`;
+                    periodStats.push({
+                        period: weekLabel,
+                        bookings: bookingsCount
+                    });
+                }
+            }
+            break;
+
+        case 'yearly':
+            // Get monthly stats for the current year (12 months)
+            for (let month = 0; month < 12; month++) {
+                const monthStart = new Date(now.getFullYear(), month, 1);
+                const monthEnd = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+                
+                const bookingsCount = await FlightTicket.countDocuments({
+                    airline: airline._id,
+                    status: { $in: ['active', 'expired', 'cancelled'] },
+                    createdAt: { $gte: monthStart, $lte: monthEnd }
+                });
+                
+                const monthLabel = monthStart.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                });
+                
+                periodStats.push({
+                    period: monthLabel,
+                    bookings: bookingsCount
+                });
+            }
+            break;
+    }
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: {
+            totalBookings: totalBookings,
+            type: type,
+            periodStats: periodStats
+        }
     });
 });
 

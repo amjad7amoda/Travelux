@@ -36,6 +36,7 @@ const scheduleTrainStatusCheck = require('./utils/jobs/updateTrainStatus');
 const scheduleFlightStatusCheck = require('./utils/jobs/updateFlightStatus');
 const scheduleCarStatusCheck = require('./utils/jobs/updateCarStatus');
 const scheduleHotelRoomStatusCheck = require('./utils/jobs/updateHotelRoomStatus');
+const scheduleTripStatusCheck = require('./utils/jobs/updateTripStatus');
 const eventRouter = require('./routes/trips/eventRoute');
 const tripRouter = require('./routes/trips/tripRoute');
 const tripTicketRouter = require('./routes/trips/tripTicketRoute');
@@ -72,6 +73,7 @@ scheduleTrainStatusCheck();
 scheduleFlightStatusCheck();
 scheduleCarStatusCheck();
 scheduleHotelRoomStatusCheck();
+scheduleTripStatusCheck();
 
 //======== Routes =========//
 app.use('/api/server-status', serverStatusRouter);

@@ -4,12 +4,17 @@ const factory = require('../handlersFactory');
 const ApiError = require('../../utils/apiError');
 const Trip = require('../../models/trips/tripModel');
 const Bill = require('../../models/Payments/billModel');
+const { createNotification } = require('../notificationService');
 
 // @desc get all logged user valid trip tickets
 // @route GET /api/tripTickets/MyTickets
 // @access Private [user]
 exports.getLoggedUserValidTripTickets = asyncHandler(async (req, res, next) => {
-    const tripTickets = await TripTicket.find({ user: req.user._id, status: 'valid' });
+    const tripTickets = await TripTicket.find({ user: req.user._id, status: 'valid' })
+    .populate({
+        path: 'trip',
+        select: 'title country city price events tripCover category'
+    });
     res.status(200).json({
         status: 'success',
         data: tripTickets,
@@ -28,13 +33,12 @@ exports.getTripTicketsForTrip = asyncHandler(async (req, res, next) => {
 });
 
 // @desc Book a ticket for a trip
-// @route POST /api/tripTickets/trip/:tripId
+// @route POST /api/tripTickets/trip
 // @access Private [user]
-// user send in the body the number of passengers
-// user send in the params the tripId
+// user send in the body the number of passengers and the tripId
 exports.bookTicket = asyncHandler(async (req, res, next) => {
 
-    const trip = await Trip.findById(req.params.tripId);
+    const trip = await Trip.findById(req.body.tripId);
     if (!trip) {
         return next(new ApiError('Trip not found', 404));
     }
@@ -58,15 +62,14 @@ exports.bookTicket = asyncHandler(async (req, res, next) => {
         return next(new ApiError('Trip cannot accommodate requested number of passengers', 400));
     }
 
-
-
     const totalPrice = trip.price * req.body.numberOfPassengers;
     const tripTicket = await TripTicket.create({
-        trip: req.params.tripId,
+        trip: req.body.tripId,
         user: req.user._id,
         numberOfPassengers: req.body.numberOfPassengers,
         totalPrice: totalPrice,
     });
+    
     // add the trip ticket to the trip registeredUsers array
     trip.registeredUsers.push({
         userId: req.user._id,
@@ -74,7 +77,15 @@ exports.bookTicket = asyncHandler(async (req, res, next) => {
         numberOfPassengers: req.body.numberOfPassengers,
     });
     await trip.save();
-    // update 
+    
+    // send notification to the user about successful booking
+    await createNotification(
+        req.user._id,
+        'Trip Booked Successfully',
+        `You have successfully booked ${req.body.numberOfPassengers} passenger(s) for trip "${trip.title}" to ${trip.city}, ${trip.country}. Total price: $${totalPrice}`,
+        'trip'
+    );
+    
     res.status(201).json({
         status: 'success',
         data: tripTicket,
@@ -100,15 +111,15 @@ exports.cancelTicket = asyncHandler(async (req, res, next) => {
         return next(new ApiError('Ticket cannot be cancelled', 400));
     }
 
-    // Update ticket status to cancelled
-    tripTicket.status = 'cancelled';
-    await tripTicket.save();
-
-    // Find the trip and remove user from registeredUsers array
+    // Get trip details before cancellation for notification
     const trip = await Trip.findById(tripTicket.trip);
     if (!trip) {
         return next(new ApiError('Trip not found', 404));
     }
+
+    // Update ticket status to cancelled
+    tripTicket.status = 'cancelled';
+    await tripTicket.save();
 
     // Remove the user from registeredUsers array based on tripTicketId
     trip.registeredUsers = trip.registeredUsers.filter(
@@ -128,10 +139,18 @@ exports.cancelTicket = asyncHandler(async (req, res, next) => {
                 item.bookingId.toString() !== tripTicket._id.toString()
             );
             
-            bill.totalPrice -= tripTicket.finalPrice;
+            bill.totalPrice -= tripTicket.totalPrice;
             await bill.save();
         }
     }
+
+    // send notification to the user about ticket cancellation
+    await createNotification(
+        req.user._id,
+        'Trip Ticket Cancelled',
+        `Your trip ticket for "${trip.title}" to ${trip.city}, ${trip.country} has been cancelled successfully. Refund will be processed.`,
+        'trip'
+    );
 
     res.status(200).json({
         status: 'success',
