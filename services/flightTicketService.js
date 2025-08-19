@@ -187,6 +187,14 @@ exports.getTicketsForFlight = asyncHandler(async (req, res, next) => {
         }
     }
 
+    // send notification to the user about ticket cancellation
+    await createNotification(
+        req.user._id, 
+        'Ticket Cancelled', 
+        `Your ticket for flight ${outboundFlight.flightNumber} has been cancelled successfully. Refund will be processed.`,
+        "flight"
+    );
+
     res.status(200).json({
         status: 'success',
         message: 'Ticket cancelled successfully'

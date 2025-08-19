@@ -7,6 +7,7 @@ const ApiError = require('../utils/apiError');
 const {countries: europeanCountries} = require('../data/europeanCountries.json');
 const {airports: europeanAirports} = require('../data/europeanAirports.json');
 const ApiFeatures = require('../utils/apiFeatures');
+const { createNotificationForMany } = require('./notificationService');
 
 // ****************** middlewares ******************
 
@@ -416,10 +417,67 @@ exports.updateFlight = asyncHandler(async (req, res, next) => {
     if (!flight) {
         return next(new ApiError('Flight not found', 404));
     }
-    // 3-) update flight
+    
+    // 3-) find all users who booked this flight from seatMap
+    
+    // Get unique users from seatMap who have booked seats
+    const bookedUsers = new Set();
+    flight.seatMap.forEach(seat => {
+        if (seat.isBooked && seat.bookedBy) {
+            bookedUsers.add(seat.bookedBy.toString());
+        }
+    });
+    
+    // 4-) update flight
     const updatedFlight = await Flight.findByIdAndUpdate(req.params.id, req.body, { new: true ,runValidators: true});
-    // 4-) send response
-    res.status(200).json({ data: updatedFlight });
+    
+    // 5-) send notifications to all booked users at once
+    let notificationsSent = 0;
+    if (bookedUsers.size > 0) {
+        try {
+            let notificationMessage = `Your flight ${flight.flightNumber} has been updated.`;
+            
+            // Add specific details about what was updated
+            if (req.body.departureDate) {
+                const newDate = new Date(req.body.departureDate);
+                notificationMessage += ` New departure time: ${newDate.toLocaleString()}.`;
+            }
+            if (req.body.departureAirport) {
+                notificationMessage += ` New departure airport: ${req.body.departureAirport}.`;
+            }
+            if (req.body.arrivalAirport) {
+                notificationMessage += ` New arrival airport: ${req.body.arrivalAirport}.`;
+            }
+            if (req.body.duration) {
+                notificationMessage += ` New duration: ${req.body.duration} minutes.`;
+            }
+            if (req.body.priceEconomy || req.body.priceBusiness) {
+                notificationMessage += ` Flight prices have been updated.`;
+            }
+            
+            // Convert Set to Array for createNotificationForMany
+            const userIdsArray = Array.from(bookedUsers);
+            
+            await createNotificationForMany(
+                userIdsArray,
+                'Flight Updated',
+                notificationMessage,
+                'flight'
+            );
+            
+            notificationsSent = userIdsArray.length;
+        } catch (notificationError) {
+            console.error('Error sending notifications to users:', notificationError);
+            // Continue even if notifications fail
+        }
+    }
+    
+    // 6-) send response
+    res.status(200).json({ 
+        data: updatedFlight,
+        notificationsSent: notificationsSent,
+        message: `Flight updated successfully and ${notificationsSent} notifications sent to booked users`
+    });
 });
 
 // @desc cancel flight
@@ -435,20 +493,62 @@ exports.cancelFlight = asyncHandler(async (req, res, next) => {
     if(!flight){
         return next(new ApiError('Flight not found', 404));
     }
+
+    // find all users who booked this flight from seatMap
+    
+    // Get unique users from seatMap who have booked seats
+    const bookedUsers = new Set();
+    flight.seatMap.forEach(seat => {
+        if (seat.isBooked && seat.bookedBy) {
+            bookedUsers.add(seat.bookedBy.toString());
+        }
+    });
+
+    // Update flight status to cancelled
     const updatedFlight = await Flight.findByIdAndUpdate(req.params.id, { status: 'cancelled' }, { new: true });
+    
     // find return flight and update its status to cancelled
     const returnFlight = await Flight.findById(flight.returnFlight);
     if(returnFlight){
         returnFlight.status = 'cancelled';
         await returnFlight.save();
     }
+    
     // find all tickets for the flight and update their status to cancelled
     const tickets = await FlightTicket.find({ outboundFlight: updatedFlight._id });
     tickets.forEach(async ticket => {
         ticket.status = 'cancelled';
         await ticket.save();
     });
-    res.status(200).json({ message: 'Flight cancelled successfully' });
+
+    // Send notifications to all booked users at once
+    let notificationsSent = 0;
+    if (bookedUsers.size > 0) {
+        try {
+            const notificationMessage = `Your flight ${flight.flightNumber} has been cancelled. Please contact customer service for refund information.`;
+            
+            // Convert Set to Array for createNotificationForMany
+            const userIdsArray = Array.from(bookedUsers);
+            
+            await createNotificationForMany(
+                userIdsArray,
+                'Flight Cancelled',
+                notificationMessage,
+                'flight'
+            );
+            
+            notificationsSent = userIdsArray.length;
+        } catch (notificationError) {
+            console.error('Error sending cancellation notifications to users:', notificationError);
+            // Continue even if notifications fail
+        }
+    }
+
+    res.status(200).json({ 
+        message: 'Flight cancelled successfully',
+        notificationsSent: notificationsSent,
+        details: `Flight cancelled and ${notificationsSent} notifications sent to booked users`
+    });
 });
 
 

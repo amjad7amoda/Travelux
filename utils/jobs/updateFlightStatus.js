@@ -3,8 +3,8 @@ const Flight = require('../../models/flightModel');
 const FlightTicket = require('../../models/flightTicketModel');
 
 function scheduleFlightStatusCheck() {
-    // Run every minute
-    cron.schedule('* * * * *', async () => {
+    // Run every 2 hours
+    cron.schedule('0 */2 * * *', async () => {
         try {
             const currentDate = new Date();
 

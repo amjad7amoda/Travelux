@@ -4,8 +4,8 @@ const TripTicket = require('../../models/trips/tripTicketModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 
 function scheduleTripStatusCheck() {
-    // Run every minute
-    cron.schedule('* * * * *', async () => {
+    // Run every 3 hours
+    cron.schedule('0 */3 * * *', async () => {
         try {
             const currentDate = new Date();
 
