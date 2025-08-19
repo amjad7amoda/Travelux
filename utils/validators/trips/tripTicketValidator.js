@@ -10,7 +10,7 @@ exports.getTripTicketsForTripValidator = [
 
 // bookTicket validator
 exports.bookTicketValidator = [
-    param('tripId').isMongoId().withMessage('Invalid trip id'),
+    body('tripId').isMongoId().withMessage('Invalid trip id'),
     body('numberOfPassengers').isInt({ min: 1 }).withMessage('Number of passengers must be at least 1'),
     validatorMiddleware
 ];

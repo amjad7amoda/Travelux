@@ -25,9 +25,9 @@ router.get('/MyTickets', protect, allowTo('user'), getLoggedUserValidTripTickets
 router.get('/trip/:tripId', protect, allowTo('admin'), getTripTicketsForTripValidator, getTripTicketsForTrip);
 
 // @desc Book a ticket for a trip
-// @route POST /api/tripTickets  /trip/:tripId
+// @route POST /api/tripTickets  /trip
 // @access Private [user]
-router.post('/trip/:tripId', protect, allowTo('user'), bookTicketValidator, bookTicket);
+router.post('/trip', protect, allowTo('user'), bookTicketValidator, bookTicket);
 
 // @desc Cancel a trip ticket
 // @route PUT /api/tripTickets  /:ticketId/cancel

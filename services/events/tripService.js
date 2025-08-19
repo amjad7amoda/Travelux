@@ -144,7 +144,10 @@ exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
 // @desc get list of trips
 // @route get /api/trips
 // @access public [user ,admin]
-exports.getTrips = factory.GetAll(Trip,'Trip');
+exports.getTrips = asyncHandler(async(req,res,next)=>{
+    const trips = await Trip.find().populate('guider').populate('events.eventId');
+    res.status(200).json({data:trips});
+});
 
 // @desc get specific trip
 // @route get /api/trips/:id

@@ -9,7 +9,11 @@ const Bill = require('../../models/Payments/billModel');
 // @route GET /api/tripTickets/MyTickets
 // @access Private [user]
 exports.getLoggedUserValidTripTickets = asyncHandler(async (req, res, next) => {
-    const tripTickets = await TripTicket.find({ user: req.user._id, status: 'valid' });
+    const tripTickets = await TripTicket.find({ user: req.user._id, status: 'valid' })
+    .populate({
+        path: 'trip',
+        select: 'title country city price events tripCover category'
+    });
     res.status(200).json({
         status: 'success',
         data: tripTickets,
@@ -28,13 +32,12 @@ exports.getTripTicketsForTrip = asyncHandler(async (req, res, next) => {
 });
 
 // @desc Book a ticket for a trip
-// @route POST /api/tripTickets/trip/:tripId
+// @route POST /api/tripTickets/trip
 // @access Private [user]
-// user send in the body the number of passengers
-// user send in the params the tripId
+// user send in the body the number of passengers and the tripId
 exports.bookTicket = asyncHandler(async (req, res, next) => {
 
-    const trip = await Trip.findById(req.params.tripId);
+    const trip = await Trip.findById(req.body.tripId);
     if (!trip) {
         return next(new ApiError('Trip not found', 404));
     }
@@ -62,7 +65,7 @@ exports.bookTicket = asyncHandler(async (req, res, next) => {
 
     const totalPrice = trip.price * req.body.numberOfPassengers;
     const tripTicket = await TripTicket.create({
-        trip: req.params.tripId,
+        trip: req.body.tripId,
         user: req.user._id,
         numberOfPassengers: req.body.numberOfPassengers,
         totalPrice: totalPrice,
