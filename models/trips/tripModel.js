@@ -106,7 +106,7 @@ const tripSchema = new mongoose.Schema({
     //default
     status: {
         type: String,
-        enum: ['pending','cancelled','completed','full'],
+        enum: ['pending','cancelled','completed','full','onTheWay'],
             default: 'pending',
     },
     //in body   
