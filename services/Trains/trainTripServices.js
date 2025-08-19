@@ -312,9 +312,6 @@ exports.getManagerTrips = asyncHandler(async (req, res, next) => {
         return newTrip;
     });
 
-    if(managerTrips.length === 0)
-        return next(new ApiError(`You don't have train trips.`))
-
     return res.status(200).json({
         status: 'success',
         result: managerTrips.length,

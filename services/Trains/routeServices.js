@@ -67,9 +67,7 @@ exports.getManagerRoutes = asyncHandler( async(req, res, next) => {
         })
     }
     const managerRoutes = routes.filter(route => route.routeManager.toString() == user._id.toString())
-
-    if(managerRoutes.length == 0)
-        return next(new ApiError(`You don't have routes`, 400)); 
+ 
     
     return res.json({
             stautus: 'success',
