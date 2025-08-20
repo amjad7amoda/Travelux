@@ -11,11 +11,8 @@ const {
     UpdateLoggedUserPassword, 
     deactiveLoggedUser, 
     UpdateUser,
-<<<<<<< HEAD
-    getChangeableUsers
-=======
+    getChangeableUsers,
     getAllUsersWithBookings
->>>>>>> 5dd3a288196fabfc18b1c8ce69e5260704a67090
 } = require('../services/userServices');
 
 const { protect, allowTo } = require('../services/authServices');
@@ -66,13 +63,11 @@ router.delete('/deactiveMe',
 
 //=============================== Admin Routes ===============================
 //routes for admin
-<<<<<<< HEAD
 router.put('/updateUser/:id', protect, allowTo('admin'),updateUserValidator, UpdateUser);
 router.get('/getAllUsers', protect, allowTo('admin'), getAllUsers);
 router.get('/getUser/:id', protect, allowTo('admin'), getUserValidator,getUser);
 
 router.get('/changeable', protect, allowTo('admin'), getChangeableUsers);
-=======
 // @desc Update user
 // @route PUT /api/users/:id
 // @access Private(admin)
@@ -107,5 +102,4 @@ router.get('/getAllUsersWithBookings',
     getAllUsersWithBookings
 );
 
->>>>>>> 5dd3a288196fabfc18b1c8ce69e5260704a67090
 module.exports = router;
