@@ -17,12 +17,8 @@ const CarBooking = require('../models/Cars/carBookingModel');
 const AirlineBooking = require('../models/flightTicketModel');
 const ApiError = require('../utils/apiError');
 const TrainTripBooking= require('../models/Trains/trainTripBookingModel');
-const CarBooking = require('../models/Cars/carBookingModel');
-const HotelBooking = require('../models/Hotels/hotelBookingModel');
 const FlightBooking = require('../models/flightTicketModel');
-const TripBooking = require('../models/trips/tripTicketModel');
 
-<<<<<<< HEAD
 // @desc Get Changeable Users
 // @route get /api/user/changeable
 // @access private (admin)
@@ -61,7 +57,6 @@ exports.getChangeableUsers = asyncHandler(async (req, res, next) => {
         data: { users: usersWithoutBookings }
     });
 });
-=======
 // @desc get all users with bookings
 // @route get /api/user/getAllUsersWithBookings
 // @access private (admin)
@@ -187,7 +182,6 @@ exports.getAllUsersWithBookings = asyncHandler(async(req,res,next)=>{
 
     res.status(200).json({status:"SUCCESS",data:{users}});
 })
->>>>>>> 5dd3a288196fabfc18b1c8ce69e5260704a67090
 
 // @desc Get all users
 // @route get /api/user/getAllUsers
@@ -241,10 +235,7 @@ exports.UpdateUser = asyncHandler(async (req, res, next) => {
         }
     }
     user.avatar = req.body.avatar;
-<<<<<<< HEAD
 
-=======
->>>>>>> 5dd3a288196fabfc18b1c8ce69e5260704a67090
     await user.save();
     const token = generateToken({ userId: user._id });
     res.status(200).json({ status: "SUCCESS", message: 'User updated successfully', data: { user, token } });
