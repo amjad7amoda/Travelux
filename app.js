@@ -45,6 +45,8 @@ const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
 const billServices = require('./services/Payments/billServices');
 
+const guiderRouter = require('./routes/trips/guiderRoute');
+
 //======== Config Requirement ========//
 env.config();
 dbconnection();
@@ -108,6 +110,8 @@ app.use('/api/payments/bill', billRouter);
 app.use('/api/events', eventRouter);
 app.use('/api/trips', tripRouter);
 app.use('/api/tripTickets', tripTicketRouter);
+
+app.use('/api/guiders', guiderRouter);
 
 //======== Setup the server ========//
 const port = process.env.PORT;

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const dotenv = require('dotenv');
+
 dotenv.config();
 
 const tripSchema = new mongoose.Schema({
@@ -100,8 +101,8 @@ const tripSchema = new mongoose.Schema({
     // in body
     guider: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+        ref: 'Guider',
+        required: true
     },
     //default
     status: {

@@ -10,7 +10,8 @@ const {
     getUser, 
     UpdateLoggedUserPassword, 
     deactiveLoggedUser, 
-    UpdateUser 
+    UpdateUser,
+    getChangeableUsers
 } = require('../services/userServices');
 
 const { protect, allowTo } = require('../services/authServices');
@@ -31,4 +32,6 @@ router.delete('/deactiveMe', protect, deactiveLoggedUser);
 router.put('/updateUser/:id', protect, allowTo('admin'),updateUserValidator, UpdateUser);
 router.get('/getAllUsers', protect, allowTo('admin'), getAllUsers);
 router.get('/getUser/:id', protect, allowTo('admin'), getUserValidator,getUser);
+
+router.get('/changeable', protect, allowTo('admin'), getChangeableUsers);
 module.exports = router;
