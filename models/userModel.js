@@ -63,7 +63,6 @@ const userSchema = mongoose.Schema({
     role: {
         type: String,
         enum: ['owner', 'admin', 'supporter', 'guider', 'user', 'hotelManager', 'airlineOwner', 'routeManager', 'officeManager'],
-        lowercase: true,
         required: [true, 'You should have a role'],
         default: 'user'
     },

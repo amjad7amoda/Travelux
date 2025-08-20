@@ -247,7 +247,11 @@ exports.getAllFlights = asyncHandler(async (req, res, next) => {
         flights = flights.filter(flight => flight.airline.name === req.query.airlineName);
     }
     if(!flights){
-        return next(new ApiError('No flights found', 404));
+        // if no flights found, return empty array
+        return res.status(200).json({
+            pagination: apiFeatures.paginateResult,
+            data: []
+        });
     }
 
     // apply filter for returnDate
