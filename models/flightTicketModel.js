@@ -52,6 +52,11 @@ const flightTicketSchema = new mongoose.Schema({
 
 // populate the outboundFlight and returnFlight
 flightTicketSchema.pre('find', function(next) {
+
+    if(this.options.skip) {
+        return next();
+    }
+    
     this.populate({
         path: 'outboundFlight',
         select: 'departureDate arrivalDate departureAirport arrivalAirport duration _id'

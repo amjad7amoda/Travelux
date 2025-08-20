@@ -11,7 +11,137 @@ const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
 const Factory = require('./handlersFactory');
 const UserModel = require('../models/userModel');
 const ApiError = require('../utils/apiError');
+const TrainTripBooking= require('../models/Trains/trainTripBookingModel');
+const CarBooking = require('../models/Cars/carBookingModel');
+const HotelBooking = require('../models/Hotels/hotelBookingModel');
+const FlightBooking = require('../models/flightTicketModel');
+const TripBooking = require('../models/trips/tripTicketModel');
 
+// @desc get all users with bookings
+// @route get /api/user/getAllUsersWithBookings
+// @access private (admin)
+exports.getAllUsersWithBookings = asyncHandler(async(req,res,next)=>{
+    const users = await UserModel.find({ role: 'user' })
+    .select('firstName lastName role').lean();
+    const userIds = users.map(user => user._id);
+    
+    const [
+        allTrainBookings,
+        allCarBookings,
+        allFlightBookings,
+        allHotelBookings,
+        allTripBookings
+    ] = await Promise.all([
+            TrainTripBooking.find({ user: { $in: userIds }, paymentStatus: 'paid' })
+            .select('user trainTrip totalPrice startStation endStation')
+            .populate([{
+                path: 'trainTrip',
+                select: 'route',
+                populate: {
+                    path: 'route',
+                    select: 'name'
+                }
+            },{
+                path: 'startStation',
+                select: 'country city'
+            },{
+                path: 'endStation',
+                select: 'country city'
+            }])
+            .lean(),
+        
+        CarBooking.find({ user: { $in: userIds }, paymentStatus: 'paid' })
+            .select('user car totalPrice')
+            .populate({
+                path: 'car',
+                select: 'model year brand office',
+                populate: {
+                    path: 'office',
+                    select: 'name city country'
+                }
+            }).lean(),
+        
+        FlightBooking.find({ user: { $in: userIds }, paymentStatus: 'paid' })
+            .select('user outboundFlight returnFlight status finalPrice')
+            .populate({
+                path: 'outboundFlight returnFlight',
+                select: 'departureAirport',
+                options: { skip: true }
+            })
+            .setOptions({ skip: true}).lean(),
+        
+        HotelBooking.find({ user: { $in: userIds }, paymentStatus: 'paid' })
+            .select('user hotel totalPrice')
+            .populate({
+                path: 'hotel',
+                select: 'name city country'
+            }).lean(),
+        
+        TripBooking.find({ user: { $in: userIds }, paymentStatus: 'paid' })
+            .select('user trip totalPrice')
+            .populate([{
+                path: 'trip',
+                select: 'title country city'
+            }]).lean()
+    ]);
+    
+    const bookingsByUser = {
+        train: {},
+        car: {},
+        flight: {},
+        hotel: {},
+        trip: {}
+    };
+    
+    allTrainBookings.forEach(booking => {
+        if (!bookingsByUser.train[booking.user]) {
+            bookingsByUser.train[booking.user] = [];
+        }
+        bookingsByUser.train[booking.user].push(booking);
+    });
+    
+    allCarBookings.forEach(booking => {
+        if (!bookingsByUser.car[booking.user]) {
+            bookingsByUser.car[booking.user] = [];
+        }
+        bookingsByUser.car[booking.user].push(booking);
+    });
+    
+    allFlightBookings.forEach(booking => {
+        if (!bookingsByUser.flight[booking.user]) {
+            bookingsByUser.flight[booking.user] = [];
+        }
+        bookingsByUser.flight[booking.user].push(booking);
+    });
+    
+    allHotelBookings.forEach(booking => {
+        if (!bookingsByUser.hotel[booking.user]) {
+            bookingsByUser.hotel[booking.user] = [];
+        }
+        bookingsByUser.hotel[booking.user].push(booking);
+    });
+    
+    allTripBookings.forEach(booking => {
+        if (!bookingsByUser.trip[booking.user]) {
+            bookingsByUser.trip[booking.user] = [];
+        }
+        bookingsByUser.trip[booking.user].push(booking);
+    });
+    
+    users.forEach(user => {
+        user.bookings = {
+            transport: [
+                ...(bookingsByUser.train[user._id] || []),
+                ...(bookingsByUser.car[user._id] || []),
+                ...(bookingsByUser.flight[user._id] || [])
+            ],
+            hotel: bookingsByUser.hotel[user._id] || [],
+            trips: bookingsByUser.trip[user._id] || []
+        };
+    });
+
+    res.status(200).json({status:"SUCCESS",data:{users}});
+})
 
 // @desc Get all users
 // @route get /api/user/getAllUsers
@@ -52,7 +182,7 @@ exports.UpdateUser=asyncHandler(async(req,res,next)=>{
     if (lastName) user.lastName = lastName;
     if (role) user.role = role;
     if (typeof isVerified !== "undefined") user.isVerified = isVerified;
-    if (email) user.email = email;
+    if (email) user.email = email.toLowerCase();
     if (typeof active !== "undefined") user.active = active;
     if(req.file && user.avatar && user.avatar.includes('/uploads/users/')){
             const oldFileName = user.avatar.split('/uploads/users/')[1];
@@ -65,7 +195,6 @@ exports.UpdateUser=asyncHandler(async(req,res,next)=>{
             }
         }
     user.avatar = req.body.avatar;
-    
     await user.save();
     const token = generateToken({ userId: user._id });
     res.status(200).json({status:"SUCCESS",message: 'User updated successfully',data:{user,token}});

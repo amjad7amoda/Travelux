@@ -128,8 +128,6 @@ exports.getUserValidator=[
 
 exports.updateUserValidator=[
 
-    
-  param('id').isMongoId().withMessage('unvalid mongo id'),
   body('firstName')
   .optional()
   .isLength({min:3}).withMessage('too short user firstName')
@@ -142,8 +140,24 @@ exports.updateUserValidator=[
   body('profileImg')
   .optional(),
 
-  
+  body('email')
+    .optional()
+    .isEmail().withMessage('Please provide a valid email')
+    .normalizeEmail()
+    .custom(async (value, { req }) => {
+      if (!value) return true;
+      
+      // Check if email exists for another user (not the current user being updated)
+      const existingUser = await UserModel.findOne({ email: value });
+      if (existingUser && existingUser._id.toString() !== req.params.id) {
+        throw new Error('Email already in use by another user');
+      }
+      return true;
+    }),
+
   body('role')
-  .optional(),
+    .optional()
+    .isIn(['admin', 'supporter', 'guider', 'user', 'hotelManager', 'airlineOwner', 'routeManager', 'officeManager']).withMessage('Invalid role'),
+
   validateMiddleware
 ];
