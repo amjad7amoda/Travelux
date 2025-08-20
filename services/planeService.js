@@ -21,9 +21,9 @@ exports.getPlanesByAirline = asyncHandler(async (req, res, next) => {
 
     // get planes by airline id
     const planes = await Plane.find({airline: airline._id});
-    if (!planes) {
-        return next(new ApiError('you dont have any planes', 404));
-    }
+    // if (!planes) {
+    //     return next(new ApiError('you dont have any planes', 404));
+    // }
 
     res.status(200).json({status: 'SUCCESS', data: planes});
 });

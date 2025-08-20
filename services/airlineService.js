@@ -109,9 +109,9 @@ exports.updateAirline = asyncHandler(async (req, res, next) => {
 // @access private [airline owner]
 exports.getOwnerAirline = asyncHandler(async (req, res, next) => {
     const airline = await Airline.findOne({owner: req.user._id}).populate('planesNum');
-    if (!airline) {
-        return next(new ApiError('You are not owner of any airline', 404));
-    }
+    // if (!airline) {
+    //     return next(new ApiError('You are not owner of any airline', 404));
+    // }
     res.status(200).json({status:"SUCCESS",data: airline});
 });
 

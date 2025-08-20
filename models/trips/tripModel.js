@@ -154,10 +154,10 @@ tripSchema.post('init',async(doc)=>{
         if(doc.tripCover.startsWith('http')){
             // استخراج اسم الملف من الرابط
             const fileName = doc.tripCover.split('/').pop();
-            doc.tripCover = `http://localhost:${process.env.PORT}/trips/${fileName}`;
+            doc.tripCover = `${process.env.BASE_URL}/trips/${fileName}`;
         } else {
             // إذا كان اسم ملف فقط، إضافة الرابط الكامل
-            const tripCoverUrl = `http://localhost:${process.env.PORT}/trips/${doc.tripCover}`;
+            const tripCoverUrl = `${process.env.BASE_URL}/trips/${doc.tripCover}`;
             doc.tripCover = tripCoverUrl;
         }
     }
