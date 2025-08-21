@@ -11,6 +11,7 @@ const {
     UpdateLoggedUserPassword, 
     deactiveLoggedUser, 
     UpdateUser,
+    getChangeableUsers,
     getAllUsersWithBookings
 } = require('../services/userServices');
 
@@ -62,6 +63,11 @@ router.delete('/deactiveMe',
 
 //=============================== Admin Routes ===============================
 //routes for admin
+router.put('/updateUser/:id', protect, allowTo('admin'),updateUserValidator, UpdateUser);
+router.get('/getAllUsers', protect, allowTo('admin'), getAllUsers);
+router.get('/getUser/:id', protect, allowTo('admin'), getUserValidator,getUser);
+
+router.get('/changeable', protect, allowTo('admin'), getChangeableUsers);
 // @desc Update user
 // @route PUT /api/users/:id
 // @access Private(admin)
