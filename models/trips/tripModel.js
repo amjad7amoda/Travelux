@@ -145,7 +145,17 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-}, {timestamps: true,});
+
+    ratingsAverage:{
+        type:Number,
+        min:[1,'rating average must be 1 or greater '],
+        max:[5,'max rating is 5']
+    },
+    ratingsQuantity:{
+        type:Number,
+        default:0
+    },
+}, {timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true }});
 
 // get one && get all && update
 tripSchema.post('init',async(doc)=>{
@@ -162,6 +172,12 @@ tripSchema.post('init',async(doc)=>{
         }
     }
 })
+
+tripSchema.virtual('reviews',{
+    ref:"TripReview",
+    foreignField:"trip",
+    localField:"_id"
+});
 
 const Trip = mongoose.model('Trip', tripSchema);
 module.exports = Trip;
