@@ -1,15 +1,14 @@
 const AppReview = require('../../models/reviews/appReviewsModel');
 const Factory = require('../handlersFactory');
 const asyncHandler = require('../../middlewares/asyncHandler');
-
+const GlobalErrorHandler = require('../../utils/apiError');
 // @desc get all app reviews with user details
 // @route get /api/appReviews/
 // @access public
 exports.getAllAppReviews = asyncHandler(async (req, res, next) => {
     const reviews = await AppReview.find()
         .populate({
-            path: 'user',
-            select: 'name'
+            path: 'user'
         })
         .sort({ createdAt: -1 });
 

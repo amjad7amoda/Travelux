@@ -18,7 +18,7 @@ exports.createTripReviewValidator = [
         }
         return true;
     }),
-    body('rating').isInt({min:1,max:5}).withMessage('Rating must be between 1 and 5'),
+    body('rating').isFloat({min:1,max:5}).withMessage('Rating must be between 1 and 5'),
     body('title').optional().isString().withMessage('Title must be a string'),
     validatorMiddleware
 ];
