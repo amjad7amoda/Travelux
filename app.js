@@ -110,9 +110,9 @@ app.use('/api/trips', tripRouter);
 app.use('/api/tripTickets', tripTicketRouter);
 
 //======== Setup the server ========//
-const port = process.env.PORT;
+const port = process.env.PORT || 4000;
 app.listen(port, () => {
-    console.log(`Listening on http://localhost:${port}`);
+    console.log(`Listening on ${process.env.BASE_URL}`);
 });
 
 app.use(globalErrorHandler); //Error Handler
