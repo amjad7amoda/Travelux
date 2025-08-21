@@ -2,7 +2,7 @@ const { body , param} = require("express-validator");
 const validatorMiddleware = require("../../../middlewares/validatorMiddleware");
 const Trip = require("../../../models/trips/tripModel");
 const Event = require("../../../models/trips/eventModel");
-const User = require("../../../models/userModel");
+const Guider = require("../../../models/trips/guiderModel");
 const europeanCountries = require("../../../data/europeanCountries.json");
 
 
@@ -86,14 +86,11 @@ exports.createTripValidator = [
     
     // guider id ,
     body('guider').notEmpty().withMessage('Guider is required')
-    .isMongoId().withMessage('Guider must be a valid user id')
+    .isMongoId().withMessage('Guider must be a valid guider id')
     .custom((value) => {
-        return User.findById(value).then(user => {
-            if (!user) {
-                return Promise.reject('Guider must be a valid user');
-            }
-            if (user.role !== 'guider') {
-                return Promise.reject('User must have guider role');
+        return Guider.findById(value).then(guider => {
+            if (!guider) {
+                return Promise.reject('Guider must be a valid guider');
             }
             return true;
         });

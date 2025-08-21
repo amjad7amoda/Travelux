@@ -150,10 +150,18 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
     const trips = await Trip.aggregate([
         {
             $lookup: {
-                from: 'users',
+                from: 'guiders',
                 localField: 'guider',
                 foreignField: '_id',
                 as: 'populatedGuider'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'populatedGuider.user',
+                foreignField: '_id',
+                as: 'guiderUser'
             }
         },
         {
@@ -174,7 +182,14 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
         },
         {
             $addFields: {
-                'guider': { $arrayElemAt: ['$populatedGuider', 0] },
+                'guider': { 
+                    $mergeObjects: [
+                        { $arrayElemAt: ['$populatedGuider', 0] },
+                        { 
+                            user: { $arrayElemAt: ['$guiderUser', 0] }
+                        }
+                    ]
+                },
                 'reviews': {
                     $map: {
                         input: '$reviews',
@@ -204,7 +219,8 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
         {
             $project: {
                 populatedGuider: 0,
-                reviewUsers: 0
+                reviewUsers: 0,
+                guiderUser: 0
             }
         }
     ]);
@@ -225,10 +241,18 @@ exports.getTrip = asyncHandler(async(req,res,next)=>{
         { $match: { _id: new mongoose.Types.ObjectId(req.params.id) } },
         {
             $lookup: {
-                from: 'users',
+                from: 'guiders',
                 localField: 'guider',
                 foreignField: '_id',
                 as: 'populatedGuider'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'populatedGuider.user',
+                foreignField: '_id',
+                as: 'guiderUser'
             }
         },
         {
@@ -249,7 +273,14 @@ exports.getTrip = asyncHandler(async(req,res,next)=>{
         },
         {
             $addFields: {
-                'guider': { $arrayElemAt: ['$populatedGuider', 0] },
+                'guider': { 
+                    $mergeObjects: [
+                        { $arrayElemAt: ['$populatedGuider', 0] },
+                        { 
+                            user: { $arrayElemAt: ['$guiderUser', 0] }
+                        }
+                    ]
+                },
                 'reviews': {
                     $map: {
                         input: '$reviews',
@@ -279,7 +310,8 @@ exports.getTrip = asyncHandler(async(req,res,next)=>{
         {
             $project: {
                 populatedGuider: 0,
-                reviewUsers: 0
+                reviewUsers: 0,
+                guiderUser: 0
             }
         }
     ]);
@@ -376,13 +408,13 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
 
     // التحقق من guider إذا كان يتم تحديثه
     if (updateData.guider) {
-        const User = require('../../models/userModel');
-        const guider = await User.findById(updateData.guider);
+        const Guider = require('../../models/guiderModel');
+        const guider = await Guider.findById(updateData.guider);
         if (!guider) {
             return next(new ApiError('Guider not found', 404));
         }
         if (guider.role !== 'guider') {
-            return next(new ApiError('User must have guider role', 400));
+            return next(new ApiError('Guider must have guider role', 400));
         }
     }
 
