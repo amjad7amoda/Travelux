@@ -9,9 +9,9 @@ exports.createGuider = asyncHandler(async (req, res, next) => {
     if (!user) {
         return next(new ApiError('User not found', 400));
     }
-    if (user.role !== 'user' || user.role !== 'guider') {
-        return next(new ApiError('This user does not have sufficient permissions', 400));
-    }
+    // if (user.role !== 'user' || user.role !== 'guider') {
+    //     return next(new ApiError('This user does not have sufficient permissions', 400));
+    // }
     user.role = 'guider';
     await user.save();
     const guider = await Guider.create(req.body);
