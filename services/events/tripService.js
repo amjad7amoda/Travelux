@@ -2,6 +2,7 @@ const sharp = require('sharp');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');
+const mongoose = require('mongoose');
 const Event = require('../../models/trips/eventModel');
 const Trip = require('../../models/trips/tripModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
@@ -146,17 +147,185 @@ exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
 // @route get /api/trips
 // @access public [user ,admin]
 exports.getTrips = asyncHandler(async(req,res,next)=>{
-    const trips = await Trip.find().populate('guider').populate('events.eventId');
-    res.status(200).json({data:trips});
+    const trips = await Trip.aggregate([
+        {
+            $lookup: {
+                from: 'guiders',
+                localField: 'guider',
+                foreignField: '_id',
+                as: 'populatedGuider'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'populatedGuider.user',
+                foreignField: '_id',
+                as: 'guiderUser'
+            }
+        },
+        {
+            $lookup: {
+                from: 'tripreviews',
+                localField: '_id',
+                foreignField: 'trip',
+                as: 'reviews'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'reviews.user',
+                foreignField: '_id',
+                as: 'reviewUsers'
+            }
+        },
+        {
+            $addFields: {
+                'guider': { 
+                    $mergeObjects: [
+                        { $arrayElemAt: ['$populatedGuider', 0] },
+                        { 
+                            user: { $arrayElemAt: ['$guiderUser', 0] }
+                        }
+                    ]
+                },
+                'reviews': {
+                    $map: {
+                        input: '$reviews',
+                        as: 'review',
+                        in: {
+                            $mergeObjects: [
+                                '$$review',
+                                {
+                                    user: {
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: '$reviewUsers',
+                                                    cond: { $eq: ['$$this._id', '$$review.user'] }
+                                                }
+                                            },
+                                            0
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                populatedGuider: 0,
+                reviewUsers: 0,
+                guiderUser: 0
+            }
+        }
+    ]);
+    
+    // Now populate events separately
+    const populatedTrips = await Trip.populate(trips, [
+        { path: 'events.eventId' }
+    ]);
+    
+    res.status(200).json({data: populatedTrips});
 });
 
 // @desc get specific trip
 // @route get /api/trips/:id
 // @access public [user ,admin]
 exports.getTrip = asyncHandler(async(req,res,next)=>{
-    // populate events.eventId with event details and guider details
-    const trip = await Trip.findById(req.params.id).populate('events.eventId').populate('guider');
-    res.status(200).json({data:trip});
+    const trip = await Trip.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(req.params.id) } },
+        {
+            $lookup: {
+                from: 'guiders',
+                localField: 'guider',
+                foreignField: '_id',
+                as: 'populatedGuider'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'populatedGuider.user',
+                foreignField: '_id',
+                as: 'guiderUser'
+            }
+        },
+        {
+            $lookup: {
+                from: 'tripreviews',
+                localField: '_id',
+                foreignField: 'trip',
+                as: 'reviews'
+            }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'reviews.user',
+                foreignField: '_id',
+                as: 'reviewUsers'
+            }
+        },
+        {
+            $addFields: {
+                'guider': { 
+                    $mergeObjects: [
+                        { $arrayElemAt: ['$populatedGuider', 0] },
+                        { 
+                            user: { $arrayElemAt: ['$guiderUser', 0] }
+                        }
+                    ]
+                },
+                'reviews': {
+                    $map: {
+                        input: '$reviews',
+                        as: 'review',
+                        in: {
+                            $mergeObjects: [
+                                '$$review',
+                                {
+                                    user: {
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: '$reviewUsers',
+                                                    cond: { $eq: ['$$this._id', '$$review.user'] } 
+                                                }
+                                            },
+                                            0
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                populatedGuider: 0,
+                reviewUsers: 0,
+                guiderUser: 0
+            }
+        }
+    ]);
+    
+    if (!trip || trip.length === 0) {
+        return next(new ApiError(`No trip for this id ${req.params.id}`, 404));
+    }
+    
+    // Now populate events separately
+    const populatedTrip = await Trip.populate(trip[0], [
+        { path: 'events.eventId' }
+    ]);
+    
+    res.status(200).json({data: populatedTrip});
 });
 
 // @desc create trip
@@ -239,13 +408,13 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
 
     // التحقق من guider إذا كان يتم تحديثه
     if (updateData.guider) {
-        const User = require('../../models/userModel');
-        const guider = await User.findById(updateData.guider);
+        const Guider = require('../../models/guiderModel');
+        const guider = await Guider.findById(updateData.guider);
         if (!guider) {
             return next(new ApiError('Guider not found', 404));
         }
         if (guider.role !== 'guider') {
-            return next(new ApiError('User must have guider role', 400));
+            return next(new ApiError('Guider must have guider role', 400));
         }
     }
 

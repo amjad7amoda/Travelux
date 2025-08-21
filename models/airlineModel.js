@@ -53,7 +53,7 @@ const airlineSchema = new mongoose.Schema({
 // get one && get all && update
 airlineSchema.post('init',async(doc)=>{
     if(doc.logo){
-        const logoUrl =`http://localhost:${process.env.PORT}/airlines/${doc.logo}`;
+        const logoUrl =`${process.env.BASE_URL}/airlines/${doc.logo}`;
         doc.logo = logoUrl;
     }
 })

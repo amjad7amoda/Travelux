@@ -40,10 +40,14 @@ const scheduleTripStatusCheck = require('./utils/jobs/updateTripStatus');
 const eventRouter = require('./routes/trips/eventRoute');
 const tripRouter = require('./routes/trips/tripRoute');
 const tripTicketRouter = require('./routes/trips/tripTicketRoute');
+const tripReviewsRouter = require('./routes/reviews/tripReviewsRoute');
+const appReviewsRouter = require('./routes/reviews/appReviewsRoute');
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
 const billServices = require('./services/Payments/billServices');
+
+const guiderRouter = require('./routes/trips/guiderRoute');
 
 //======== Config Requirement ========//
 env.config();
@@ -108,6 +112,10 @@ app.use('/api/payments/bill', billRouter);
 app.use('/api/events', eventRouter);
 app.use('/api/trips', tripRouter);
 app.use('/api/tripTickets', tripTicketRouter);
+app.use('/api/tripReviews', tripReviewsRouter);
+app.use('/api/appReviews', appReviewsRouter);
+
+app.use('/api/guiders', guiderRouter);
 
 //======== Setup the server ========//
 const port = process.env.PORT || 4000;

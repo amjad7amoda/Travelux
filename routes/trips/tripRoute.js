@@ -23,24 +23,28 @@ const {
 } = require('../../utils/validators/trips/tripValidator');
 
 const {protect, allowTo} = require('../../services/authServices');
+const tripReviewsRoute = require('../reviews/tripReviewsRoute');
 
 const router = express.Router();
+router.use('/:tripId/tripReviews',tripReviewsRoute);
 
-router.route('/').get(protect,getTrips)
+router.route('/')
+    .get(protect, getTrips)
+    .post(protect, allowTo('admin'),
+        uploadTripImages,
+        resizeTripImages,
+        convertEventsToJson,
+        sortEventsAndAssignOrder,
+        setEndTimeOfEachEvent,
+        checkEventTimeConflicts,
+        calculateTripDuration,
+        createTripValidator,
+        createTrip
+    );
 
-                .post(protect,allowTo('admin')
-                ,uploadTripImages
-                ,resizeTripImages
-                ,convertEventsToJson
-                ,sortEventsAndAssignOrder
-                ,setEndTimeOfEachEvent
-                ,checkEventTimeConflicts
-                ,calculateTripDuration
-                ,createTripValidator
-                ,createTrip);
-
-router.route('/:id').get(protect,getTripValidator,getTrip)
-                    .put(protect, allowTo('admin'), updateTrip);
+router.route('/:id')
+    .get(protect, getTripValidator, getTrip)
+    .put(protect, allowTo('admin'), updateTrip);
 
 
 // @desc add event to trip by id 

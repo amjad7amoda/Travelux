@@ -100,8 +100,8 @@ const tripSchema = new mongoose.Schema({
     // in body
     guider: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+        ref: 'Guider',
+        required: true
     },
     //default
     status: {
@@ -145,7 +145,17 @@ const tripSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-}, {timestamps: true,});
+
+    ratingsAverage:{
+        type:Number,
+        min:[1,'rating average must be 1 or greater '],
+        max:[5,'max rating is 5']
+    },
+    ratingsQuantity:{
+        type:Number,
+        default:0
+    },
+}, {timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true }});
 
 // get one && get all && update
 tripSchema.post('init',async(doc)=>{
@@ -154,14 +164,20 @@ tripSchema.post('init',async(doc)=>{
         if(doc.tripCover.startsWith('http')){
             // استخراج اسم الملف من الرابط
             const fileName = doc.tripCover.split('/').pop();
-            doc.tripCover = `http://localhost:${process.env.PORT}/trips/${fileName}`;
+            doc.tripCover = `${process.env.BASE_URL}/trips/${fileName}`;
         } else {
             // إذا كان اسم ملف فقط، إضافة الرابط الكامل
-            const tripCoverUrl = `http://localhost:${process.env.PORT}/trips/${doc.tripCover}`;
+            const tripCoverUrl = `${process.env.BASE_URL}/trips/${doc.tripCover}`;
             doc.tripCover = tripCoverUrl;
         }
     }
 })
+
+tripSchema.virtual('reviews',{
+    ref:"TripReview",
+    foreignField:"trip",
+    localField:"_id"
+});
 
 const Trip = mongoose.model('Trip', tripSchema);
 module.exports = Trip;
