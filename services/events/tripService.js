@@ -76,6 +76,9 @@ exports.calculateTripDuration = asyncHandler(async (req, res, next) => {
         // تعيين مدة الرحلة
         req.body.duration = finalDuration;
     }
+    else{
+        req.body.duration = 0;
+    }
     
     next();
 });

@@ -24,7 +24,6 @@ const tripSchema = new mongoose.Schema({
     // auto calculate from events start and end time [days]
     duration: {
         type: Number,
-        required: true,
         min: [0, 'Trip duration must be at least 0 day'],
         max: [30, 'Trip duration must be less than 30 days'],
         default: 0,
