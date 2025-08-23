@@ -23,7 +23,7 @@ exports.createTripValidator = [
     .isFloat({min:0}).withMessage('Trip price must be greater than 0'),
 
     body('duration').notEmpty().withMessage('Trip duration is required')
-    .isInt({min:1,max:30}).withMessage('Trip duration must be at least 1 day and less than 30 days'),
+    .isInt({min:0,max:30}).withMessage('Trip duration must be at least 0 day and less than 30 days'),
 
     body('country').notEmpty().withMessage('Country is required')
     .custom((value) => {

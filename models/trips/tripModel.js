@@ -25,7 +25,7 @@ const tripSchema = new mongoose.Schema({
     duration: {
         type: Number,
         required: true,
-        min: [1, 'Trip duration must be at least 1 day'],
+        min: [0, 'Trip duration must be at least 0 day'],
         max: [30, 'Trip duration must be less than 30 days'],
         default: 0,
     },
