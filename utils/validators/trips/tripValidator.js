@@ -97,7 +97,7 @@ exports.createTripValidator = [
     }),
 
     // events validation
-    body('events').notEmpty().withMessage('Events are required')
+    body('events').optional()
     .isArray().withMessage('Events must be an array')
     .custom((events) => {
         if (!Array.isArray(events)) {

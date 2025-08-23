@@ -138,7 +138,7 @@ const tripSchema = new mongoose.Schema({
                 required: true
             }
         }],
-        required: true,
+        default: []
     },
     //in body
     tripCover: {
