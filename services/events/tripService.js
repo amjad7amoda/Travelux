@@ -460,7 +460,7 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
 
     // التحقق من guider إذا كان يتم تحديثه
     if (updateData.guider) {
-        const Guider = require('../../models/guiderModel');
+        const Guider = require('../../models/trips/guiderModel');
         const guider = await Guider.findById(updateData.guider);
         if (!guider) {
             return next(new ApiError('Guider not found', 404));
