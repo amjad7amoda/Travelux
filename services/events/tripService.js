@@ -465,9 +465,6 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
         if (!guider) {
             return next(new ApiError('Guider not found', 404));
         }
-        if (guider.role !== 'guider') {
-            return next(new ApiError('Guider must have guider role', 400));
-        }
     }
 
     // تحديث الصورة إذا كان هناك ملف جديد
