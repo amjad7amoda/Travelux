@@ -1,7 +1,7 @@
 const CountryReview = require('../../models/reviews/countryReviewModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const europeanCountries = require('../../data/europeanCountries.json');
-
+const ApiError = require('../../utils/apiError');
 // @desc إضافة تقييم جديد لبلد
 // @route POST /api/country-reviews
 // @access private
@@ -14,10 +14,7 @@ exports.addCountryReview = asyncHandler(async (req, res, next) => {
     );
     
     if (!countryExists) {
-        return res.status(400).json({
-            success: false,
-            message: 'Country not found in European countries list'
-        });
+        return next(new ApiError('Country not found in European countries list', 400));
     }
     
     // التحقق من أن المستخدم لم يقيم نفس البلد من قبل
@@ -27,10 +24,7 @@ exports.addCountryReview = asyncHandler(async (req, res, next) => {
     });
     
     if (existingReview) {
-        return res.status(400).json({
-            success: false,
-            message: 'You have already reviewed this country'
-        });
+        return next(new ApiError('You have already reviewed this country', 400));
     }
     
     // إنشاء التقييم الجديد
@@ -46,12 +40,14 @@ exports.addCountryReview = asyncHandler(async (req, res, next) => {
         .populate('user', 'name email avatar');
     
     res.status(201).json({
-        success: true,
-        data: populatedReview
+        status: "SUCCESS",
+        data: {
+            countryReview: populatedReview
+        }
     });
 });
 
-// @desc حذف تقييم من قبل المستخدم
+// @desc حذف تقييم من قبل المستخدم أو الأدمن
 // @route DELETE /api/country-reviews/:id
 // @access private
 exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
@@ -61,56 +57,57 @@ exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
     const review = await CountryReview.findById(id);
     
     if (!review) {
-        return res.status(404).json({
-            success: false,
-            message: 'Review not found'
+        return next(new ApiError('Review not found', 404));
+    }
+    
+    // إذا كان المستخدم أدمن، يمكنه حذف أي تقييم
+    if (req.user.role === 'admin') {
+        await CountryReview.findByIdAndDelete(id);
+        return res.status(200).json({
+            status: "SUCCESS",
+            msg: "deleted by admin"
         });
     }
     
-    // التحقق من أن المستخدم هو من كتب التقييم
+    // إذا كان المستخدم عادي، يجب أن يكون صاحب التقييم
     if (review.user.toString() !== req.user.id) {
-        return res.status(403).json({
-            success: false,
-            message: 'You are not authorized to delete this review'
-        });
+        return next(new ApiError('You are not authorized to delete this review', 403));
     }
     
     // حذف التقييم
     await CountryReview.findByIdAndDelete(id);
     
     res.status(200).json({
-        success: true,
-        message: 'Review deleted successfully'
+        status: "SUCCESS",
+        msg: "deleted"
     });
 });
 
-// @desc جلب كل التقييمات
+// @desc جلب تقييمات بلد معين أو جميع التقييمات
 // @route GET /api/country-reviews
 // @access public
 exports.getAllCountryReviews = asyncHandler(async (req, res, next) => {
-    const { country, rating, sort = '-createdAt' } = req.query;
+    const { country, sort = '-createdAt' } = req.query;
     
     // بناء query
     let query = {};
     
-    // فلترة حسب البلد
+    // إذا تم إرسال بلد معين، أضف فلتر البلد
     if (country) {
         query.country = { $regex: country, $options: 'i' };
     }
     
-    // فلترة حسب التقييم
-    if (rating) {
-        query.rating = { $gte: parseFloat(rating) };
-    }
-    
     // جلب التقييمات مع معلومات المستخدمين
     const reviews = await CountryReview.find(query)
-        .populate('user', 'name email avatar')
+        .populate('user', 'firstName lastName email avatar')
         .sort(sort);
     
+
+
     res.status(200).json({
-        success: true,
-        count: reviews.length,
-        data: reviews
+        status: "SUCCESS",
+        data: {
+            countryReviews: reviews
+        }
     });
 });
