@@ -232,8 +232,11 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
     const populatedTrips = await Trip.populate(trips, [
         { path: 'events.eventId' }
     ]);
+    // filter trips by status 
+    // if status is not pending, remove it from the array
+    const populatedTripsFiltered = populatedTrips.filter(trip => trip.status === 'pending');
     
-    res.status(200).json({data: populatedTrips});
+    res.status(200).json({data: populatedTripsFiltered});
 });
 
 // @desc get specific trip
@@ -621,3 +624,6 @@ exports.deleteEventFromTrip = asyncHandler(async(req,res,next)=>{
 
     res.status(200).json({data:trip});
 });
+
+
+

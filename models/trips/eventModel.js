@@ -32,7 +32,7 @@ const eventSchema = new mongoose.Schema({
 // get one && get all && update
 eventSchema.post('init',async(doc)=>{
     if(doc.cover){
-        const coverUrl =`${process.env.BASE_URL}/events/${doc.cover}`;
+        const coverUrl =`${process.env.BASE_URL_ADDED}/events/${doc.cover}`;
         doc.cover = coverUrl;
     }
 })

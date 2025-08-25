@@ -44,7 +44,8 @@ router.route('/')
 
 router.route('/:id')
     .get(protect, getTripValidator, getTrip)
-    .put(protect, allowTo('admin'), updateTrip);
+    .put(protect, allowTo('admin'),uploadTripImages,resizeTripImages,updateTrip);
+
 
 
 // @desc add event to trip by id 

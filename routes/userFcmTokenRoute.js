@@ -11,7 +11,7 @@ router.delete('/', protect, deleteFcmToken);
 // Test notification endpoint
 router.get('/test-notification', protect, async (req, res) => {
     try {
-        const token = 'd2Co7309R9m1opi8ni3QpN:APA91bHLZMl_3DVR33aNy87yXIi8NGa5Q0GZ-qQ88MlHYtgPC5q_ee99htbYo6ADevJeF4kjPLPL3Y7ST0F2rYNE5S0uCUVsJ2XmjAdCnPzDt9pbQRqE-lg';
+        const token = 'ckw69WQsT1GXklaVzNBr9a:APA91bF_jIWGwQ1HjRYl1nrtPuox86oJqt3R71gIjxSZ-TSLgayNwxgM20K1hxiLzz6JLjsr-tApqloCZ4IwL4QnDK3DbDeXJ_7Ikz2EelRoIPQkT1waqH8';
         const response = await sendPushNotification(
             token,
             'Test Notification',

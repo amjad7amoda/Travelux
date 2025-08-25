@@ -10,7 +10,6 @@ const userFcmTokenSchema = new mongoose.Schema({
   fcmToken: {
     type: String,
     required: true,
-    unique: true
   }
 }, { timestamps: true });
 
