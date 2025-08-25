@@ -157,21 +157,7 @@ const tripSchema = new mongoose.Schema({
 }, {timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true }});
 
 // get one && get all && update
-tripSchema.post('init',async(doc)=>{
-    console.log(doc);
-    if(doc.tripCover){
-        // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
-        if(doc.tripCover.startsWith('http')){
-            // استخراج اسم الملف من الرابط
-            const fileName = doc.tripCover.split('/').pop();
-            doc.tripCover = `${process.env.BASE_URL_ADDED}/trips/${fileName}`;
-        } else {
-            // إذا كان اسم ملف فقط، إضافة الرابط الكامل
-            const tripCoverUrl = `${process.env.BASE_URL_ADDED}/trips/${doc.tripCover}`;
-            doc.tripCover = tripCoverUrl;
-        }
-    }
-})
+// تم إزالة middleware post('init') - سيتم معالجة tripCover في الخدمات
 
 tripSchema.virtual('reviews',{
     ref:"TripReview",

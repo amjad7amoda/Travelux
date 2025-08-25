@@ -33,11 +33,11 @@ exports.resizeTripImages = asyncHandler(async (req, res, next) => {
 
 // 3-)Helper function to delete old trip cover
 const deleteOldTripCover = async (coverFileName) => {
-    const newCoverFileName = coverFileName.split('/');
-    const finalNewCoverFileName = newCoverFileName[newCoverFileName.length - 1];
-    
     if (coverFileName) {
-        const coverPath = path.join(__dirname, '..', 'uploads', 'trips', finalNewCoverFileName);
+        // استخراج اسم الملف فقط (بعد آخر /)
+        const fileName = coverFileName.split('/').pop();
+        
+        const coverPath = path.join(__dirname, '..', '..', 'uploads', 'trips', fileName);
         try {
             await fs.unlink(coverPath);
         } catch (error) {
@@ -232,6 +232,23 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
     const populatedTrips = await Trip.populate(trips, [
         { path: 'events.eventId' }
     ]);
+    
+    // معالجة tripCover لكل رحلة
+    populatedTrips.forEach(trip => {
+        if(trip.tripCover){
+            // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
+            if(trip.tripCover.startsWith('http')){
+                // استخراج اسم الملف من الرابط
+                const fileName = trip.tripCover.split('/').pop();
+                trip.tripCover = `${process.env.BASE_URL_ADDED}/trips/${fileName}`;
+            } else {
+                // إذا كان اسم ملف فقط، إضافة الرابط الكامل
+                const tripCoverUrl = `${process.env.BASE_URL_ADDED}/trips/${trip.tripCover}`;
+                trip.tripCover = tripCoverUrl;
+            }
+        }
+    });
+    
     // filter trips by status 
     // if status is not pending, remove it from the array
     const populatedTripsFiltered = populatedTrips.filter(trip => trip.status === 'pending');
@@ -331,6 +348,20 @@ exports.getTrip = asyncHandler(async(req,res,next)=>{
         { path: 'events.eventId' }
     ]);
     
+    // معالجة tripCover للرحلة
+    if(populatedTrip.tripCover){
+        // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
+        if(populatedTrip.tripCover.startsWith('http')){
+            // استخراج اسم الملف من الرابط
+            const fileName = populatedTrip.tripCover.split('/').pop();
+            populatedTrip.tripCover = `${process.env.BASE_URL_ADDED}/trips/${fileName}`;
+        } else {
+            // إذا كان اسم ملف فقط، إضافة الرابط الكامل
+            const tripCoverUrl = `${process.env.BASE_URL_ADDED}/trips/${populatedTrip.tripCover}`;
+            populatedTrip.tripCover = tripCoverUrl;
+        }
+    }
+    
     res.status(200).json({data: populatedTrip});
 });
 
@@ -351,6 +382,21 @@ exports.createTrip = asyncHandler(async(req,res,next)=>{
         events:req.body.events,
         tripCover:req.body.tripCover,
     });
+
+    // معالجة tripCover للرحلة المنشأة
+    if(trip.tripCover){
+        // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
+        if(trip.tripCover.startsWith('http')){
+            // استخراج اسم الملف من الرابط
+            const fileName = trip.tripCover.split('/').pop();
+            trip.tripCover = `${process.env.BASE_URL_ADDED}/trips/${fileName}`;
+        } else {
+            // إذا كان اسم ملف فقط، إضافة الرابط الكامل
+            const tripCoverUrl = `${process.env.BASE_URL_ADDED}/trips/${trip.tripCover}`;
+            trip.tripCover = tripCoverUrl;
+        }
+    }
+
     res.status(201).json({data:trip});
 });
 
@@ -439,6 +485,20 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
         { new: true, runValidators: true }
     );
 
+    // معالجة tripCover للرحلة المحدثة
+    if(updatedTrip.tripCover){
+        // إذا كان يحتوي على رابط كامل، استخراج اسم الملف فقط
+        if(updatedTrip.tripCover.startsWith('http')){
+            // استخراج اسم الملف من الرابط
+            const fileName = updatedTrip.tripCover.split('/').pop();
+            updatedTrip.tripCover = `${process.env.BASE_URL_ADDED}/trips/${fileName}`;
+        } else {
+            // إذا كان اسم ملف فقط، إضافة الرابط الكامل
+            const tripCoverUrl = `${process.env.BASE_URL_ADDED}/trips/${updatedTrip.tripCover}`;
+            updatedTrip.tripCover = tripCoverUrl;
+        }
+    }
+
     // إرسال إشعارات لجميع المستخدمين المحجوزين
     let notificationsSent = 0;
     if (trip.registeredUsers && trip.registeredUsers.length > 0) {
@@ -463,7 +523,7 @@ exports.updateTrip = asyncHandler(async(req,res,next)=>{
             // استمر حتى لو فشلت الإشعارات
         }
     }
-
+    
     res.status(200).json({ 
         data: updatedTrip,
         notificationsSent: notificationsSent,
