@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const Event = require('../../models/trips/eventModel');
 const Trip = require('../../models/trips/tripModel');
+const Guider = require('../../models/trips/guiderModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const factory = require('../handlersFactory');
 const ApiError = require('../../utils/apiError');
@@ -681,6 +682,427 @@ exports.deleteEventFromTrip = asyncHandler(async(req,res,next)=>{
 
     res.status(200).json({data:trip});
 });
+
+// @desc cancel trip by id
+//@route delete /api/trips/:id/cancel
+//@access private [admin]
+exports.cancelTrip = asyncHandler(async(req,res,next)=>{
+    const {id} = req.params;
+
+    // check if trip exists
+    const trip = await Trip.findById(id);
+    if (!trip) {
+        return next(new ApiError('Trip not found', 404));
+    }
+
+    // check trip status , reject if trip is not pending
+    if (trip.status !== 'pending') {
+        return next(new ApiError('Trip can only be cancelled if it is pending', 400));
+    }
+    
+    // trip can only be cancelled if it is there is 24 hours before the trip starts
+    const tripStart = new Date(trip.events[0].startTime);
+    const now = new Date();
+    const timeDifference = tripStart.getTime() - now.getTime();
+    if (timeDifference > 24 * 60 * 60 * 1000) {
+        return next(new ApiError('Trip can only be cancelled if it is there is 24 hours before the trip starts', 400));
+    }
+
+    // cancel trip
+    trip.status = 'cancelled';
+    await trip.save();
+
+    // send notification to all registered users
+    const userIds = trip.registeredUsers.map(user => user.userId.toString());
+    await createNotificationForMany(userIds, 'Trip Cancelled', `Trip "${trip.title}" has been cancelled.`, 'trip',trip.id);
+
+    // send notification to guider
+    await createNotification(trip.guider.user, 'Trip Cancelled', `Trip "${trip.title}" has been cancelled.`, 'trip',trip.id);
+
+    res.status(200).json({data:trip});
+});
+
+// @desc get trip statistics for admin dashboard
+// @route get /api/trips/statistics1
+// @access private [admin]
+exports.getStatistics1 = asyncHandler(async (req, res, next) => {
+    const TripTicket = require('../../models/trips/tripTicketModel');
+
+    // Calculate current period (current month)
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    // Calculate previous period (previous month)
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+    // Helper function to calculate percentage change
+    const calculateChange = (current, previous) => {
+        if (previous === 0) return current > 0 ? 100 : 0;
+        return ((current - previous) / previous) * 100;
+    };
+
+    // Helper function to determine trend
+    const getTrend = (change) => {
+        if (change > 0) return 'up';
+        if (change < 0) return 'down';
+        return 'neutral';
+    };
+
+    // Get completed trips (completed status)
+    const completedTripsCurrent = await Trip.countDocuments({
+        status: 'completed',
+        'events.endTime': { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const completedTripsPrevious = await Trip.countDocuments({
+        status: 'completed',
+        'events.endTime': { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get active trips (pending and onTheWay status)
+    const activeTripsCurrent = await Trip.countDocuments({
+        status: { $in: ['pending', 'onTheWay'] },
+        'events.startTime': { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const activeTripsPrevious = await Trip.countDocuments({
+        status: { $in: ['pending', 'onTheWay'] },
+        'events.startTime': { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get cancelled trips
+    const cancelledTripsCurrent = await Trip.countDocuments({
+        status: 'cancelled',
+        updatedAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+    });
+
+    const cancelledTripsPrevious = await Trip.countDocuments({
+        status: 'cancelled',
+        updatedAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+    });
+
+    // Get total revenue from trip tickets
+    const totalRevenueCurrent = await TripTicket.aggregate([
+        {
+            $match: {
+                status: { $in: ['valid', 'expired'] }, // Only count paid tickets
+                paymentStatus: 'paid',
+                createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$totalPrice' }
+            }
+        }
+    ]);
+
+    const totalRevenuePrevious = await TripTicket.aggregate([
+        {
+            $match: {
+                status: { $in: ['valid', 'expired'] }, // Only count paid tickets
+                paymentStatus: 'paid',
+                createdAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$totalPrice' }
+            }
+        }
+    ]);
+
+    const revenueCurrent = totalRevenueCurrent[0]?.total || 0;
+    const revenuePrevious = totalRevenuePrevious[0]?.total || 0;
+
+    // Calculate changes and trends
+    const completedTripsChange = calculateChange(completedTripsCurrent, completedTripsPrevious);
+    const activeTripsChange = calculateChange(activeTripsCurrent, activeTripsPrevious);
+    const cancelledTripsChange = calculateChange(cancelledTripsCurrent, cancelledTripsPrevious);
+    const totalRevenueChange = calculateChange(revenueCurrent, revenuePrevious);
+
+    const stats = {
+        completedTrips: {
+            current: completedTripsCurrent,
+            previous: completedTripsPrevious,
+            change: Math.round(completedTripsChange * 100) / 100,
+            trend: getTrend(completedTripsChange)
+        },
+        activeTrips: {
+            current: activeTripsCurrent,
+            previous: activeTripsPrevious,
+            change: Math.round(activeTripsChange * 100) / 100,
+            trend: getTrend(activeTripsChange)
+        },
+        cancelledTrips: {
+            current: cancelledTripsCurrent,
+            previous: cancelledTripsPrevious,
+            change: Math.round(cancelledTripsChange * 100) / 100,
+            trend: getTrend(cancelledTripsChange)
+        },
+        totalRevenue: {
+            current: revenueCurrent,
+            previous: revenuePrevious,
+            change: Math.round(totalRevenueChange * 100) / 100,
+            trend: getTrend(totalRevenueChange),
+            currency: "USD"
+        }
+    };
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: { stats }
+    });
+});
+
+// @desc get top 4 most booked trips with passenger counts
+// @route get /api/trips/statistics2
+// @access private [admin]
+exports.getStatistics2 = asyncHandler(async (req, res, next) => {
+    // Get top 4 most booked trips
+    const topBookedTrips = await Trip.aggregate([
+        {
+            $addFields: {
+                // حساب إجمالي عدد المسافرين من جميع الحجوزات
+                totalPassengers: {
+                    $reduce: {
+                        input: "$registeredUsers",
+                        initialValue: 0,
+                        in: { $add: ["$$value", "$$this.numberOfPassengers"] }
+                    }
+                }
+            }
+        },
+        {
+            $sort: { totalPassengers: -1 } // ترتيب تنازلي حسب عدد المسافرين
+        },
+        {
+            $limit: 4 // أخذ أول 4 رحلات فقط
+        },
+        {
+            $project: {
+                title: 1,               // اسم الرحلة
+                city: 1,                // المدينة
+                totalPassengers: 1,     // إجمالي عدد المسافرين
+                bookingCount: { $size: "$registeredUsers" }  // عدد الحجوزات (عدد المستخدمين)
+            }
+        }
+    ]);
+
+    // حساب إجمالي عدد المسافرين في الـ 4 رحلات
+    const totalPassengersInTop4 = topBookedTrips.reduce((total, trip) => {
+        return total + trip.totalPassengers;
+    }, 0);
+
+    // حساب إجمالي عدد الحجوزات في الـ 4 رحلات
+    const totalBookingsInTop4 = topBookedTrips.reduce((total, trip) => {
+        return total + trip.bookingCount;
+    }, 0);
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: {
+            topBookedTrips,
+            totalPassengersInTop4,     // إجمالي عدد المسافرين في الـ 4 رحلات
+            totalBookingsInTop4,       // إجمالي عدد الحجوزات في الـ 4 رحلات
+            totalTripsAnalyzed: await Trip.countDocuments() // إجمالي عدد الرحلات في النظام
+        }
+    });
+});
+
+// @desc get revenue statistics by type (weekly, monthly, yearly)
+// @route get /api/trips/statistics3?type=weekly
+// @access private [admin]
+exports.getStatistics3 = asyncHandler(async (req, res, next) => {
+    const TripTicket = require('../../models/trips/tripTicketModel');
+    
+    // Get type from query parameters, default to 'weekly'
+    const type = req.query.type || 'weekly';
+    
+    // Validate type
+    const validTypes = ['weekly', 'monthly', 'yearly'];
+    if (!validTypes.includes(type)) {
+        return next(new ApiError('Invalid type. Please provide: weekly, monthly, or yearly', 400));
+    }
+
+    // Get total revenue from all trip tickets
+    const totalRevenue = await TripTicket.aggregate([
+        {
+            $match: {
+                status: { $in: ['valid', 'expired', 'cancelled'] }, // Include all paid tickets including cancelled
+                paymentStatus: 'paid'
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                total: { $sum: '$totalPrice' }
+            }
+        }
+    ]);
+
+    let periodStats = [];
+    const now = new Date();
+
+    switch (type) {
+        case 'weekly':
+            // Get daily revenue stats for the last 8 days
+            for (let i = 7; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+                
+                const dailyRevenue = await TripTicket.aggregate([
+                    {
+                        $lookup: {
+                            from: 'trips',
+                            localField: 'trip',
+                            foreignField: '_id',
+                            as: 'tripInfo'
+                        }
+                    },
+                    {
+                        $unwind: '$tripInfo'
+                    },
+                    {
+                        $match: {
+                            status: { $in: ['valid', 'expired', 'cancelled'] },
+                            paymentStatus: 'paid',
+                            'tripInfo.events.startTime': { $gte: dayStart, $lte: dayEnd }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            revenue: { $sum: '$totalPrice' }
+                        }
+                    }
+                ]);
+                
+                periodStats.push({
+                    period: dayStart.toISOString().split('T')[0], // YYYY-MM-DD format
+                    revenue: dailyRevenue[0]?.revenue || 0
+                });
+            }
+            break;
+
+        case 'monthly':
+            // Get weekly revenue stats for the current month (4 weeks)
+            const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            
+            // Calculate weeks in current month
+            const firstWeekStart = new Date(currentMonthStart);
+            firstWeekStart.setDate(firstWeekStart.getDate() - firstWeekStart.getDay()); // Start of first week
+            
+            for (let i = 0; i < 4; i++) {
+                const weekStart = new Date(firstWeekStart);
+                weekStart.setDate(weekStart.getDate() + (i * 7));
+                
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+                
+                // Only include weeks that overlap with current month
+                if (weekStart <= currentMonthEnd && weekEnd >= currentMonthStart) {
+                    const weeklyRevenue = await TripTicket.aggregate([
+                        {
+                            $lookup: {
+                                from: 'trips',
+                                localField: 'trip',
+                                foreignField: '_id',
+                                as: 'tripInfo'
+                            }
+                        },
+                        {
+                            $unwind: '$tripInfo'
+                        },
+                        {
+                            $match: {
+                                status: { $in: ['valid', 'expired', 'cancelled'] },
+                                paymentStatus: 'paid',
+                                'tripInfo.events.startTime': { $gte: weekStart, $lte: weekEnd }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                revenue: { $sum: '$totalPrice' }
+                            }
+                        }
+                    ]);
+                    
+                    const weekLabel = `Week ${i+1} (${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]})`;
+                    periodStats.push({
+                        period: weekLabel,
+                        revenue: weeklyRevenue[0]?.revenue || 0
+                    });
+                }
+            }
+            break;
+
+        case 'yearly':
+            // Get monthly revenue stats for the current year (12 months)
+            for (let month = 0; month < 12; month++) {
+                const monthStart = new Date(now.getFullYear(), month, 1);
+                const monthEnd = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
+                
+                const monthlyRevenue = await TripTicket.aggregate([
+                    {
+                        $lookup: {
+                            from: 'trips',
+                            localField: 'trip',
+                            foreignField: '_id',
+                            as: 'tripInfo'
+                        }
+                    },
+                    {
+                        $unwind: '$tripInfo'
+                    },
+                    {
+                        $match: {
+                            status: { $in: ['valid', 'expired', 'cancelled'] },
+                            paymentStatus: 'paid',
+                            'tripInfo.events.startTime': { $gte: monthStart, $lte: monthEnd }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            revenue: { $sum: '$totalPrice' }
+                        }
+                    }
+                ]);
+                
+                const monthLabel = monthStart.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long' 
+                });
+                
+                periodStats.push({
+                    period: monthLabel,
+                    revenue: monthlyRevenue[0]?.revenue || 0
+                });
+            }
+            break;
+    }
+
+    res.status(200).json({
+        status: "SUCCESS",
+        data: {
+            totalRevenue: totalRevenue[0]?.total || 0,
+            type: type,
+            periodStats: periodStats,
+            currency: "USD"
+        }
+    });
+});
+
 
 
 
