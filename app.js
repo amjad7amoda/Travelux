@@ -42,7 +42,7 @@ const tripRouter = require('./routes/trips/tripRoute');
 const tripTicketRouter = require('./routes/trips/tripTicketRoute');
 const tripReviewsRouter = require('./routes/reviews/tripReviewsRoute');
 const appReviewsRouter = require('./routes/reviews/appReviewsRoute');
-const countryReviewRouter = require('./routes/reviews/countryReviewRoute');
+const cityReviewRouter = require('./routes/reviews/cityReviewRoute');
 
 const couponRouter = require('./routes/Payments/couponRoute');
 const billRouter = require('./routes/Payments/billRoute');
@@ -115,7 +115,7 @@ app.use('/api/trips', tripRouter);
 app.use('/api/tripTickets', tripTicketRouter);
 app.use('/api/tripReviews', tripReviewsRouter);
 app.use('/api/appReviews', appReviewsRouter);
-app.use('/api/countryReviews', countryReviewRouter);
+app.use('/api/cityReviews', cityReviewRouter);
 
 app.use('/api/guiders', guiderRouter);
 
