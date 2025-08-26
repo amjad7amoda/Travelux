@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const countryReviewSchema = new mongoose.Schema({
+const cityReviewSchema = new mongoose.Schema({
     // المستخدم الذي كتب التقييم
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -8,8 +8,8 @@ const countryReviewSchema = new mongoose.Schema({
         required: true
     },
     
-    // البلد التي تم تقييمها
-    country: {
+    // المدينة التي تم تقييمها
+    city: {
         type: String,
         required: true,
         trim: true
@@ -36,6 +36,6 @@ const countryReviewSchema = new mongoose.Schema({
 
 
 
-const CountryReview = mongoose.model('CountryReview', countryReviewSchema);
+const CityReview = mongoose.model('CityReview', cityReviewSchema);
 
-module.exports = CountryReview;
+module.exports = CityReview;

@@ -1,42 +1,42 @@
-const CountryReview = require('../../models/reviews/countryReviewModel');
+const CityReview = require('../../models/reviews/cityReviewModel');
 const asyncHandler = require('../../middlewares/asyncHandler');
 const europeanCountries = require('../../data/europeanCountries.json');
 const ApiError = require('../../utils/apiError');
 // @desc إضافة تقييم جديد لبلد
-// @route POST /api/country-reviews
+// @route POST /api/cityReviews
 // @access private
-exports.addCountryReview = asyncHandler(async (req, res, next) => {
-    const { country, rating, title } = req.body;
+exports.addCityReview = asyncHandler(async (req, res, next) => {
+    const { city, rating, title } = req.body;
     
-    // التحقق من أن البلد موجودة في قائمة البلدان الأوروبية
-    const countryExists = europeanCountries.countries.find(
-        c => c.name.toLowerCase() === country.toLowerCase()
+    // check if the city exists and belongs to a european country
+    const cityExists = europeanCountries.countries.find(
+        c => c.cities.find(city => city.toLowerCase() === city.toLowerCase())
     );
     
-    if (!countryExists) {
-        return next(new ApiError('Country not found in European countries list', 400));
+    if (!cityExists) {
+        return next(new ApiError('City not found in European cities list', 400));
     }
     
     // التحقق من أن المستخدم لم يقيم نفس البلد من قبل
-    const existingReview = await CountryReview.findOne({
+    const existingReview = await CityReview.findOne({
         user: req.user.id,
-        country: country
+        city: city
     });
     
     if (existingReview) {
-        return next(new ApiError('You have already reviewed this country', 400));
+        return next(new ApiError('You have already reviewed this city', 400));
     }
     
     // إنشاء التقييم الجديد
-    const newReview = await CountryReview.create({
+    const newReview = await CityReview.create({
         user: req.user.id,
-        country,
+        city,
         rating,
         title
     });
     
     // جلب التقييم مع معلومات المستخدم
-    const populatedReview = await CountryReview.findById(newReview._id)
+    const populatedReview = await CityReview.findById(newReview._id)
         .populate('user', 'name email avatar');
     
     res.status(201).json({
@@ -48,13 +48,13 @@ exports.addCountryReview = asyncHandler(async (req, res, next) => {
 });
 
 // @desc حذف تقييم من قبل المستخدم أو الأدمن
-// @route DELETE /api/country-reviews/:id
+// @route DELETE /api/cityReviews/:id
 // @access private
-exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
+exports.deleteCityReview = asyncHandler(async (req, res, next) => {
     const { id } = req.params;
     
     // البحث عن التقييم
-    const review = await CountryReview.findById(id);
+    const review = await CityReview.findById(id);
     
     if (!review) {
         return next(new ApiError('Review not found', 404));
@@ -62,7 +62,7 @@ exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
     
     // إذا كان المستخدم أدمن، يمكنه حذف أي تقييم
     if (req.user.role === 'admin') {
-        await CountryReview.findByIdAndDelete(id);
+        await CityReview.findByIdAndDelete(id);
         return res.status(200).json({
             status: "SUCCESS",
             msg: "deleted by admin"
@@ -75,7 +75,7 @@ exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
     }
     
     // حذف التقييم
-    await CountryReview.findByIdAndDelete(id);
+    await CityReview.findByIdAndDelete(id);
     
     res.status(200).json({
         status: "SUCCESS",
@@ -84,21 +84,21 @@ exports.deleteCountryReview = asyncHandler(async (req, res, next) => {
 });
 
 // @desc جلب تقييمات بلد معين أو جميع التقييمات
-// @route GET /api/country-reviews
+// @route GET /api/cityReviews
 // @access public
-exports.getAllCountryReviews = asyncHandler(async (req, res, next) => {
-    const { country, sort = '-createdAt' } = req.query;
+exports.getAllCityReviews = asyncHandler(async (req, res, next) => {
+    const { city, sort = '-createdAt' } = req.query;
     
     // بناء query
     let query = {};
     
     // إذا تم إرسال بلد معين، أضف فلتر البلد
-    if (country) {
-        query.country = { $regex: country, $options: 'i' };
+    if (city) {
+        query.city = { $regex: city, $options: 'i' };
     }
     
     // جلب التقييمات مع معلومات المستخدمين
-    const reviews = await CountryReview.find(query)
+    const reviews = await CityReview.find(query)
         .populate('user', 'firstName lastName email avatar')
         .sort(sort);
     
@@ -107,7 +107,7 @@ exports.getAllCountryReviews = asyncHandler(async (req, res, next) => {
     res.status(200).json({
         status: "SUCCESS",
         data: {
-            countryReviews: reviews
+            cityReviews: reviews
         }
     });
 });
