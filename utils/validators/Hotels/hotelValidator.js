@@ -30,7 +30,7 @@ exports.createHotelValidator = [
 
     check('description').notEmpty().withMessage('Hotel description is required')
         .isLength({ min: 3 }).withMessage('Hotel description must be at least 3 characters long')
-        .isLength({ max: 30 }).withMessage('Hotel description must be less than 30 characters long'),
+        .isLength({ max: 100 }).withMessage('Hotel description must be less than 30 characters long'),
 
     check('amenities').notEmpty().withMessage('Hotel amenities are required'),
 

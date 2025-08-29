@@ -151,6 +151,18 @@ exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
 // @route get /api/trips
 // @access public [user ,admin]
 exports.getTrips = asyncHandler(async(req,res,next)=>{
+    // Get pagination parameters from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Validate pagination parameters
+    if (page < 1) {
+        return next(new ApiError('Page number must be greater than 0', 400));
+    }
+    if (limit < 1 || limit > 100) {
+        return next(new ApiError('Limit must be between 1 and 100', 400));
+    }
+
     const trips = await Trip.aggregate([
         {
             $lookup: {
@@ -254,7 +266,29 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
     // if status is not pending, remove it from the array
     const populatedTripsFiltered = populatedTrips.filter(trip => trip.status === 'pending');
     
-    res.status(200).json({data: populatedTripsFiltered});
+    // Calculate pagination
+    const totalTrips = populatedTripsFiltered.length;
+    const numOfPages = Math.ceil(totalTrips / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    
+    // Apply pagination
+    const paginatedTrips = populatedTripsFiltered.slice(startIndex, endIndex);
+    
+    // Prepare pagination result
+    const result = {
+        currentPage: page,
+        limit: limit,
+        numOfPages: numOfPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < numOfPages,
+        totalTrips: totalTrips
+    };
+    
+    res.status(200).json({
+        result: result,
+        data: paginatedTrips
+    });
 });
 
 // @desc get specific trip
@@ -783,13 +817,24 @@ exports.getStatistics1 = asyncHandler(async (req, res, next) => {
         updatedAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
     });
 
-    // Get total revenue from trip tickets
+    // Get total revenue from trip tickets - Use events.startTime from Trip like getStatistics3
     const totalRevenueCurrent = await TripTicket.aggregate([
         {
+            $lookup: {
+                from: 'trips',
+                localField: 'trip',
+                foreignField: '_id',
+                as: 'tripInfo'
+            }
+        },
+        {
+            $unwind: '$tripInfo'
+        },
+        {
             $match: {
-                status: { $in: ['valid', 'expired'] }, // Only count paid tickets
+                status: { $in: ['valid', 'expired', 'cancelled'] },
                 paymentStatus: 'paid',
-                createdAt: { $gte: currentMonthStart, $lte: currentMonthEnd }
+                'tripInfo.events.startTime': { $gte: currentMonthStart, $lte: currentMonthEnd }
             }
         },
         {
@@ -802,10 +847,21 @@ exports.getStatistics1 = asyncHandler(async (req, res, next) => {
 
     const totalRevenuePrevious = await TripTicket.aggregate([
         {
+            $lookup: {
+                from: 'trips',
+                localField: 'trip',
+                foreignField: '_id',
+                as: 'tripInfo'
+            }
+        },
+        {
+            $unwind: '$tripInfo'
+        },
+        {
             $match: {
-                status: { $in: ['valid', 'expired'] }, // Only count paid tickets
+                status: { $in: ['valid', 'expired', 'cancelled'] },
                 paymentStatus: 'paid',
-                createdAt: { $gte: previousMonthStart, $lte: previousMonthEnd }
+                'tripInfo.events.startTime': { $gte: previousMonthStart, $lte: previousMonthEnd }
             }
         },
         {
@@ -957,32 +1013,32 @@ exports.getStatistics3 = asyncHandler(async (req, res, next) => {
                 const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                 const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
                 
-                const dailyRevenue = await TripTicket.aggregate([
-                    {
-                        $lookup: {
-                            from: 'trips',
-                            localField: 'trip',
-                            foreignField: '_id',
-                            as: 'tripInfo'
-                        }
-                    },
-                    {
-                        $unwind: '$tripInfo'
-                    },
-                    {
-                        $match: {
-                            status: { $in: ['valid', 'expired', 'cancelled'] },
-                            paymentStatus: 'paid',
-                            'tripInfo.events.startTime': { $gte: dayStart, $lte: dayEnd }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: null,
-                            revenue: { $sum: '$totalPrice' }
-                        }
-                    }
-                ]);
+                                 const dailyRevenue = await TripTicket.aggregate([
+                     {
+                         $lookup: {
+                             from: 'trips',
+                             localField: 'trip',
+                             foreignField: '_id',
+                             as: 'tripInfo'
+                         }
+                     },
+                     {
+                         $unwind: '$tripInfo'
+                     },
+                     {
+                         $match: {
+                             status: { $in: ['valid', 'expired', 'cancelled'] },
+                             paymentStatus: 'paid',
+                             'tripInfo.events.startTime': { $gte: dayStart, $lte: dayEnd }
+                         }
+                     },
+                     {
+                         $group: {
+                             _id: null,
+                             revenue: { $sum: '$totalPrice' }
+                         }
+                     }
+                 ]);
                 
                 periodStats.push({
                     period: dayStart.toISOString().split('T')[0], // YYYY-MM-DD format
@@ -1010,32 +1066,32 @@ exports.getStatistics3 = asyncHandler(async (req, res, next) => {
                 
                 // Only include weeks that overlap with current month
                 if (weekStart <= currentMonthEnd && weekEnd >= currentMonthStart) {
-                    const weeklyRevenue = await TripTicket.aggregate([
-                        {
-                            $lookup: {
-                                from: 'trips',
-                                localField: 'trip',
-                                foreignField: '_id',
-                                as: 'tripInfo'
-                            }
-                        },
-                        {
-                            $unwind: '$tripInfo'
-                        },
-                        {
-                            $match: {
-                                status: { $in: ['valid', 'expired', 'cancelled'] },
-                                paymentStatus: 'paid',
-                                'tripInfo.events.startTime': { $gte: weekStart, $lte: weekEnd }
-                            }
-                        },
-                        {
-                            $group: {
-                                _id: null,
-                                revenue: { $sum: '$totalPrice' }
-                            }
-                        }
-                    ]);
+                                         const weeklyRevenue = await TripTicket.aggregate([
+                         {
+                             $lookup: {
+                                 from: 'trips',
+                                 localField: 'trip',
+                                 foreignField: '_id',
+                                 as: 'tripInfo'
+                             }
+                         },
+                         {
+                             $unwind: '$tripInfo'
+                         },
+                         {
+                             $match: {
+                                 status: { $in: ['valid', 'expired', 'cancelled'] },
+                                 paymentStatus: 'paid',
+                                 'tripInfo.events.startTime': { $gte: weekStart, $lte: weekEnd }
+                             }
+                         },
+                         {
+                             $group: {
+                                 _id: null,
+                                 revenue: { $sum: '$totalPrice' }
+                             }
+                         }
+                     ]);
                     
                     const weekLabel = `Week ${i+1} (${weekStart.toISOString().split('T')[0]} to ${weekEnd.toISOString().split('T')[0]})`;
                     periodStats.push({
@@ -1052,32 +1108,32 @@ exports.getStatistics3 = asyncHandler(async (req, res, next) => {
                 const monthStart = new Date(now.getFullYear(), month, 1);
                 const monthEnd = new Date(now.getFullYear(), month + 1, 0, 23, 59, 59, 999);
                 
-                const monthlyRevenue = await TripTicket.aggregate([
-                    {
-                        $lookup: {
-                            from: 'trips',
-                            localField: 'trip',
-                            foreignField: '_id',
-                            as: 'tripInfo'
-                        }
-                    },
-                    {
-                        $unwind: '$tripInfo'
-                    },
-                    {
-                        $match: {
-                            status: { $in: ['valid', 'expired', 'cancelled'] },
-                            paymentStatus: 'paid',
-                            'tripInfo.events.startTime': { $gte: monthStart, $lte: monthEnd }
-                        }
-                    },
-                    {
-                        $group: {
-                            _id: null,
-                            revenue: { $sum: '$totalPrice' }
-                        }
-                    }
-                ]);
+                                 const monthlyRevenue = await TripTicket.aggregate([
+                     {
+                         $lookup: {
+                             from: 'trips',
+                             localField: 'trip',
+                             foreignField: '_id',
+                             as: 'tripInfo'
+                         }
+                     },
+                     {
+                         $unwind: '$tripInfo'
+                     },
+                     {
+                         $match: {
+                             status: { $in: ['valid', 'expired', 'cancelled'] },
+                             paymentStatus: 'paid',
+                             'tripInfo.events.startTime': { $gte: monthStart, $lte: monthEnd }
+                         }
+                     },
+                     {
+                         $group: {
+                             _id: null,
+                             revenue: { $sum: '$totalPrice' }
+                         }
+                     }
+                 ]);
                 
                 const monthLabel = monthStart.toLocaleDateString('en-US', { 
                     year: 'numeric', 
