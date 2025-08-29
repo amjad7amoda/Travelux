@@ -68,13 +68,7 @@ exports.updateCarValidator = [
   body('images.*')
     .optional().isString().withMessage('Each image must be a string'),
   body('status')
-    .optional().isIn(['available', 'booked', 'maintenance']).withMessage('Status must be available, booked, or maintenance')
-    .custom((value, { req }) => {
-      if (value === 'booked' && !req.body.booked_until) {
-        throw new ApiError('You must provide booked_until when setting status to booked', 400);
-      }
-      return true;
-    }),
+    .optional().isIn(['available', 'booked', 'maintenance']).withMessage('Status must be available, booked, or maintenance'),
   body('booked_until')
     .optional().isISO8601().withMessage('booked_until must be a valid date')
     .custom((value) => {
