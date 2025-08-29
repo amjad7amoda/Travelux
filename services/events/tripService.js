@@ -151,6 +151,18 @@ exports.checkEventTimeConflicts = asyncHandler(async (req, res, next) => {
 // @route get /api/trips
 // @access public [user ,admin]
 exports.getTrips = asyncHandler(async(req,res,next)=>{
+    // Get pagination parameters from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Validate pagination parameters
+    if (page < 1) {
+        return next(new ApiError('Page number must be greater than 0', 400));
+    }
+    if (limit < 1 || limit > 100) {
+        return next(new ApiError('Limit must be between 1 and 100', 400));
+    }
+
     const trips = await Trip.aggregate([
         {
             $lookup: {
@@ -254,7 +266,29 @@ exports.getTrips = asyncHandler(async(req,res,next)=>{
     // if status is not pending, remove it from the array
     const populatedTripsFiltered = populatedTrips.filter(trip => trip.status === 'pending');
     
-    res.status(200).json({data: populatedTripsFiltered});
+    // Calculate pagination
+    const totalTrips = populatedTripsFiltered.length;
+    const numOfPages = Math.ceil(totalTrips / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    
+    // Apply pagination
+    const paginatedTrips = populatedTripsFiltered.slice(startIndex, endIndex);
+    
+    // Prepare pagination result
+    const result = {
+        currentPage: page,
+        limit: limit,
+        numOfPages: numOfPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < numOfPages,
+        totalTrips: totalTrips
+    };
+    
+    res.status(200).json({
+        result: result,
+        data: paginatedTrips
+    });
 });
 
 // @desc get specific trip
