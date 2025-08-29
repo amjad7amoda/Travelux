@@ -186,7 +186,32 @@ exports.getAllUsersWithBookings = asyncHandler(async(req,res,next)=>{
 // @desc Get all users
 // @route get /api/user/getAllUsers
 // @access private (admin)
-exports.getAllUsers = Factory.GetAll(UserModel);
+exports.getAllUsers = asyncHandler(async(req,res,next)=>{
+    const users = await UserModel.aggregate([
+        {
+            $addFields: {
+                roleOrder: {
+                    $switch: {
+                        branches: [
+                            { case: { $eq: ["$role", "admin"] }, then: 1 },
+                            { case: { $eq: ["$role", "hotelManager"] }, then: 2 },
+                            { case: { $eq: ["$role", "airlineOwner"] }, then: 3 },
+                            { case: { $eq: ["$role", "routeManager"] }, then: 4 },
+                            { case: { $eq: ["$role", "officeManager"] }, then: 5 },
+                            { case: { $eq: ["$role", "guider"] }, then: 6 },
+                            { case: { $eq: ["$role", "user"] }, then: 7 }
+                        ],
+                        default: 8
+                    }
+                }
+            }
+        },
+        { $sort: { roleOrder: 1 } },
+        { $project: { roleOrder: 0 } }
+    ]);
+    
+    res.status(200).json({status:"SUCCESS",data:{users}});
+})
 
 // @desc get specific user
 // @route get /api/users/:id
