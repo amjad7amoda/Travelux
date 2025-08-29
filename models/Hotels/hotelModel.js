@@ -32,7 +32,7 @@ const hotelSchema = new mongoose.Schema({
         type: String,
         required: [true, "Hotel description is required"],
         minlength: [3, "Hotel description must be at least 3 characters long"],
-        maxlength: [30, "Hotel description must be less than 30 characters long"],
+        maxlength: [100, "Hotel description must be less than 30 characters long"],
     },
     amenities: { // Additions like pool, gym, etc.
         type: [String],
